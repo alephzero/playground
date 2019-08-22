@@ -26,6 +26,6 @@ async def run_code(request):
     })
 
 app = web.Application()
-app.add_routes([web.get('/', root_handler),
+app.add_routes([web.static('/', '/', show_index=True),
                 web.post('/api/run', run_code)])
 web.run_app(app, port=12385)
