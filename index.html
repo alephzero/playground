@@ -1,0 +1,69 @@
+<html>
+	<head>
+		<title>AlephZero Playground</title>
+		<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.7.5/css/bulma.min.css" />
+	</head>
+	<body>
+		<section class="hero is-dark is-small">
+			<div class="hero-body level">
+				<div class="level-left">
+					<h1 class="title">
+						AlephZero Playground
+					</h1>
+				</div>
+				<div class="level-right">
+					<h2 class="subtitle">
+						Ctrl + ENTER to Run
+					</h2>
+				</div>
+			</div>
+		</section>
+
+		<div class="columns is-gapless" style="height: 100%">
+			<div class="column" style="margin: 1px">
+				<pre id="code" style="height: 100%; font-size: 1em;"></pre>
+			</div>
+			<div class="column" style="margin: 1px">
+				<pre id="output" class="has-background-dark" style="height: 100%; font-size: 1em;"></pre>
+			</div>
+		</div>
+
+		<script id="ace" defer src="//cdnjs.cloudflare.com/ajax/libs/ace/1.4.5/ace.js"></script>
+		<script>
+			const ace_script = document.querySelector('#ace')
+			ace_script.onload = () => {
+				var editor = ace.edit('code')
+				editor.setTheme('ace/theme/tomorrow_night_eighties')
+				editor.session.setMode('ace/mode/python')
+				editor.focus()
+
+				editor.setValue(`print('Hello, World!')\n`, 1)
+
+				const output_elem = document.querySelector('#output')
+
+				document.addEventListener('keydown', e => {
+					var ctrl = e.metaKey || e.ctrlKey
+					var enter = e.keyCode === 13
+
+					if (ctrl && enter) {
+						e.preventDefault()
+						output_elem.innerHTML = ''
+						output_elem.innerHTML += '<div class="has-text-info">Running...</div>'
+
+						fetch('/api/run', {
+							method: 'POST',
+							body: editor.getValue(),
+						})
+						.then(resp => resp.json())
+						.then(data => {
+							output_elem.innerHTML = `<div class="has-text-primary">${data.stdout}</div><div class="has-text-danger">${data.stderr}</div>`
+						})
+						.catch(err => {
+							output_elem.innerHTML = `<div class="has-text-danger">${err.message}</div>`
+						})
+					}
+				})
+			}
+		</script>
+	</body>
+</html>
