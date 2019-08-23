@@ -3,7 +3,7 @@ from aiohttp import web
 import tempfile
 
 async def root_handler(request):
-    return web.HTTPFound('/index.html')
+    return web.FileResponse('/index.html')
 
 async def run_code(request):
     with tempfile.NamedTemporaryFile() as code_file:
@@ -26,6 +26,6 @@ async def run_code(request):
     })
 
 app = web.Application()
-app.add_routes([web.static('/', '/', show_index=True),
+app.add_routes([web.get('/', root_handler),
                 web.post('/api/run', run_code)])
 web.run_app(app, port=12385)
