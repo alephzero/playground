@@ -83,7 +83,7 @@ p.pub(a0.Packet([], 'sand'))
 p.pub(a0.Packet([], 'more sand'))
 p.close()
 
-tm.close_topic(topic)
+topic.close()
 tm.close()
 print('Done!')
 `,
@@ -109,7 +109,7 @@ while sub.has_next():
     print(sub.next().payload)
 sub.close()
 
-tm.close_topic(topic)
+topic.close()
 tm.close()
 print('Done!')
 `,
@@ -138,7 +138,7 @@ sub = a0.Subscriber(topic, a0.INIT_OLDEST, a0.ITER_NEXT, callback)
 time.sleep(5)
 sub.await_close()
 
-tm.close_topic(topic)
+topic.close()
 tm.close()
 print('Done!')
 `,
