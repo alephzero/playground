@@ -1,6 +1,6 @@
 FROM alpine:3.10
 
-RUN apk add --no-cache g++ git linux-headers make python3-dev
+RUN apk add --no-cache g++ git go linux-headers make python3-dev
 
 RUN mkdir -p /alephzero
 
@@ -16,6 +16,9 @@ RUN cd /alephzero &&                                 \
     cd /alephzero/py &&                              \
     pip3 install -r requirements.txt &&              \
     python3 setup.py install
+
+# Install Go-API
+RUN go get github.com/alephzero/go
 
 # Install Playground deps
 RUN pip3 install aiohttp

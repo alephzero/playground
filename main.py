@@ -1,9 +1,7 @@
 import asyncio
-from aiohttp import web, WSMsgType, __version__
+from aiohttp import web, WSMsgType
 import json
 import tempfile
-
-print('aiohttp.__version__', __version__)
 
 class Namespace:
     pass
@@ -21,14 +19,45 @@ class CodeRunner:
     async def run(self):
         if self.dead:
             return
-        self.code_file = tempfile.NamedTemporaryFile()
-        with open(self.code_file.name, 'w') as fd:
+
+        code_file = tempfile.NamedTemporaryFile(suffix='.' + self.cmd['lang'], delete=False)
+        with open(code_file.name, 'w') as fd:
             fd.write(self.cmd['code'])
-        # self.cmd['lang']
-        self.proc = await asyncio.create_subprocess_exec(
-            'python3', '-u', self.code_file.name,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE)
+
+        if self.cmd['lang'] == 'py':
+            self.proc = await asyncio.create_subprocess_exec(
+                'python3', '-u', code_file.name,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE)
+        elif self.cmd['lang'] == 'go':
+            self.proc = await asyncio.create_subprocess_exec(
+                'go', 'run', code_file.name,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE)
+        elif self.cmd['lang'] == 'cc':
+            bin_file = tempfile.NamedTemporaryFile(delete=False)
+            self.proc = await asyncio.create_subprocess_exec(
+                'g++', '-o', bin_file.name, code_file.name, '-lalephzero',
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE)
+            build_result = await self.proc.wait()
+            if build_result:
+                await self.ws_out.send_json({
+                    'stream': 'stderr',
+                    'output': (await self.proc.stderr.read()).decode('utf-8'),
+                })
+                return
+            bin_file.close()
+            self.proc = await asyncio.create_subprocess_exec(
+                bin_file.name,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE)
+        else:
+            await self.ws_out.send_json({
+                'stream': 'stderr',
+                'output': 'Error: Unknown language!',
+            })
+            return
         if self.dead:
             await self.kill()
             return
