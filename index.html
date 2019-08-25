@@ -64,23 +64,23 @@
 					lang_opts: ['cc', 'go', 'py'],
 					lang_display: {py: 'Python', go: 'Go', cc: 'C++'},
 					selected_lang: undefined,
-					examples: ['pub_py', 'sub_sync_py', 'sub_py'],
+					examples: ['pub_py', 'sub_sync_py', 'sub_py', 'rpc_server_py', 'rpc_client_py'],
 					example_info: {
 						pub_py: {
 							display: 'Publisher (Py)',
 							lang: 'py',
 							code: `import alephzero as a0
+import time
 
 tm = a0.TopicManager('''{
-    "container": "Tatooine"
+    "container": "localizer"
 }''')
 
-topic = tm.open_publisher_topic('random_stuff')
+topic = tm.open_publisher_topic('location')
 p = a0.Publisher(topic)
-p.pub(a0.Packet([], 'sand'))
-p.pub(a0.Packet([], 'Jawas'))
-p.pub(a0.Packet([], 'sand'))
-p.pub(a0.Packet([], 'more sand'))
+for i in range(10):
+	p.pub(a0.Packet([], 'here (ts={})'.format(i)))
+	time.sleep(1)
 p.close()
 
 topic.close()
@@ -94,19 +94,19 @@ print('Done!')
 							code: `import alephzero as a0
 
 tm = a0.TopicManager('''{
-    "container": "Dagobah",
+    "container": "controller",
     "subscriber_maps": {
-        "visible_stuff": {
-            "container": "Tatooine",
-            "topic": "random_stuff"
+        "where_am_I": {
+            "container": "localizer",ITER_NEWEST
+            "topic": "location"
         }
     }
 }''')
 
-topic = tm.open_subscriber_topic("visible_stuff")
-sub = a0.SubscriberSync(topic, a0.INIT_OLDEST, a0.ITER_NEXT)
+topic = tm.open_subscriber_topic('where_am_I')
+sub = a0.SubscriberSync(topic, a0.INIT_MOST_RECENT, a0.ITER_NEWEST)
 while sub.has_next():
-    print(sub.next().payload)
+    print('I am ', sub.next().payload)
 sub.close()
 
 topic.close()
@@ -123,20 +123,77 @@ import time
 tm = a0.TopicManager('''{
     "container": "Endor",
     "subscriber_maps": {
-        "visible_stuff": {
-            "container": "Tatooine",
-            "topic": "random_stuff"
+        "where_am_I": {
+            "container": "localizer",
+            "topic": "location"
         }
     }
 }''')
 
-topic = tm.open_subscriber_topic("visible_stuff")
+topic = tm.open_subscriber_topic('where_am_I')
 
 def callback(pkt):
-	print('I see', pkt.payload)
-sub = a0.Subscriber(topic, a0.INIT_OLDEST, a0.ITER_NEXT, callback)
-time.sleep(5)
+	print('I am ', sub.next().payload)
+sub = a0.Subscriber(topic, a0.INIT_MOST_RECENT, a0.ITER_NEWEST, callback)
+time.sleep(60)
 sub.await_close()
+
+topic.close()
+tm.close()
+print('Done!')
+`,
+						},
+						rpc_server_py: {
+							display: 'RPC Server (Py)',
+							lang: 'py',
+							code: `import alephzero as a0
+import time
+
+tm = a0.TopicManager('''{
+    "container": "stuff_doer"
+}''')
+
+topic = tm.open_rpc_server_topic('navigate')
+
+def onrequest(pkt):
+	print('Request (id={}):'.format(pkt.id), pkt.payload)
+	server.reply(pkt.id, a0.Packet([], 'No path found. Try again later'))
+def oncancel(id):
+	print('Cancel req:', id)
+server = a0.RpcServer(topic, onrequest, oncancel)
+time.sleep(60)
+server.await_close()
+
+topic.close()
+tm.close()
+print('Done!')
+`,
+						},
+						rpc_client_py: {
+							display: 'RPC Client (Py)',
+							lang: 'py',
+							code: `import alephzero as a0
+import time
+
+tm = a0.TopicManager('''{
+    "container": "bar",
+    "rpc_client_maps": {
+        "drive_in_circles": {
+            "container": "stuff_doer",
+            "topic": "navigate"
+        }
+    }
+}''')
+
+topic = tm.open_rpc_client_topic("drive_in_circles")
+
+client = a0.RpcClient(topic)
+
+def callback(pkt):
+	print('Recieved reply:', pkt.payload)
+client.send(a0.Packet([], 'Please do!'), callback)
+time.sleep(60)
+client.await_close()
 
 topic.close()
 tm.close()
