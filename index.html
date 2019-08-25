@@ -64,8 +64,159 @@
 					lang_opts: ['cc', 'go', 'py'],
 					lang_display: {py: 'Python', go: 'Go', cc: 'C++'},
 					selected_lang: undefined,
-					examples: ['pub_py', 'sub_sync_py', 'sub_py', 'rpc_server_py', 'rpc_client_py'],
+					examples: ['pub_go', 'sub_sync_go', 'sub_go',
+							   'pub_py', 'sub_sync_py', 'sub_py', 'rpc_server_py', 'rpc_client_py'],
 					example_info: {
+						pub_go: {
+							display: 'Publisher (Go)',
+							lang: 'go',
+							code: `package main
+
+import (
+    a0 "github.com/alephzero/go"
+    "fmt"
+    "log"
+    "time"
+)
+
+func check(err error) {
+    if err != nil {
+        log.Panicf("err: %v", err)
+    }
+}
+
+func main() {
+    tm, err := a0.NewTopicManagerFromJSON(\`{
+        "container": "localizer"
+    }\`)
+    check(err)
+    defer tm.Close()
+
+    topic, err := tm.OpenPublisherTopic("location")
+    check(err)
+    defer topic.Close()
+
+    pub, err := a0.NewPublisher(topic)
+    check(err)
+    defer pub.Close()
+
+    for i := 0; i < 10; i++ {
+        var hdrs []a0.PacketHeader
+        pkt, err := a0.NewPacket(hdrs, []byte(fmt.Sprintf("here (ts=%v)", i)))
+        check(err)
+        check(pub.Pub(pkt))
+        time.Sleep(time.Second)
+    }
+
+    fmt.Println("Done!")
+}
+`,
+						},
+						sub_sync_go: {
+							display: 'Subscriber Sync (Go)',
+							lang: 'go',
+							code: `package main
+
+import (
+    a0 "github.com/alephzero/go"
+    "fmt"
+    "log"
+)
+
+func check(err error) {
+    if err != nil {
+        log.Panicf("err: %v", err)
+    }
+}
+
+func main() {
+    tm, err := a0.NewTopicManagerFromJSON(\`{
+		"container": "controller",
+		"subscriber_maps": {
+			"where_am_I": {
+				"container": "localizer",
+				"topic": "location"
+			}
+		}
+    }\`)
+    check(err)
+    defer tm.Close()
+
+    topic, err := tm.OpenSubscriberTopic("where_am_I")
+    check(err)
+    defer topic.Close()
+
+    sub, err := a0.NewSubscriberSync(topic, a0.INIT_MOST_RECENT, a0.ITER_NEWEST)
+    check(err)
+    defer sub.Close()
+
+    for {
+		hasNext, err := sub.HasNext()
+		check(err)
+		if !hasNext {
+			break
+		}
+		pkt, err := sub.Next()
+		check(err)
+
+		payload, err := pkt.Payload()
+		check(err)
+		fmt.Printf("I am %v\\n", string(payload))
+    }
+
+    fmt.Println("Done!")
+}
+`,
+						},
+						sub_go: {
+							display: 'Subscriber (Go)',
+							lang: 'go',
+							code: `package main
+
+import (
+    a0 "github.com/alephzero/go"
+    "fmt"
+	"log"
+	"time"
+)
+
+func check(err error) {
+    if err != nil {
+        log.Panicf("err: %v", err)
+    }
+}
+
+func main() {
+    tm, err := a0.NewTopicManagerFromJSON(\`{
+		"container": "controller",
+		"subscriber_maps": {
+			"where_am_I": {
+				"container": "localizer",
+				"topic": "location"
+			}
+		}
+    }\`)
+    check(err)
+    defer tm.Close()
+
+    topic, err := tm.OpenSubscriberTopic("where_am_I")
+    check(err)
+    defer topic.Close()
+
+    sub, err := a0.NewSubscriber(topic, a0.INIT_MOST_RECENT, a0.ITER_NEWEST, func(pkt a0.Packet) {
+		payload, err := pkt.Payload()
+		check(err)
+		fmt.Printf("I am %v\\n", string(payload))
+	})
+    check(err)
+    defer sub.AwaitClose()
+
+	time.Sleep(60 * time.Second)
+
+    fmt.Println("Done!")
+}
+`,
+						},
 						pub_py: {
 							display: 'Publisher (Py)',
 							lang: 'py',
@@ -97,7 +248,7 @@ tm = a0.TopicManager('''{
     "container": "controller",
     "subscriber_maps": {
         "where_am_I": {
-            "container": "localizer",ITER_NEWEST
+            "container": "localizer",
             "topic": "location"
         }
     }
@@ -106,7 +257,7 @@ tm = a0.TopicManager('''{
 topic = tm.open_subscriber_topic('where_am_I')
 sub = a0.SubscriberSync(topic, a0.INIT_MOST_RECENT, a0.ITER_NEWEST)
 while sub.has_next():
-    print('I am ', sub.next().payload)
+    print('I am', sub.next().payload)
 sub.close()
 
 topic.close()
@@ -133,7 +284,7 @@ tm = a0.TopicManager('''{
 topic = tm.open_subscriber_topic('where_am_I')
 
 def callback(pkt):
-	print('I am ', sub.next().payload)
+	print('I am', pkt.payload)
 sub = a0.Subscriber(topic, a0.INIT_MOST_RECENT, a0.ITER_NEWEST, callback)
 time.sleep(60)
 sub.await_close()
