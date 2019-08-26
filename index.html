@@ -320,7 +320,70 @@ int main() {
 						rpc_client_cc: {
 							display: 'RPC Client (C)',
 							lang: 'cc',
-							code: `// TODO`,
+							code: `#include <alephzero.h>
+#include <chrono>
+#include <iostream>
+#include <system_error>
+#include <thread>
+
+void check(errno_t err) {
+    if (err) {
+        throw std::system_error(err, std::generic_category());
+    }
+}
+
+int main() {
+	setvbuf(stdout, NULL, _IONBF, 0);
+
+    a0_topic_manager_t tm;
+    check(a0_topic_manager_init_jsonstr(&tm, R"({
+		"container": "bar",
+		"rpc_client_maps": {
+			"drive_in_circles": {
+				"container": "stuff_doer",
+				"topic": "navigate"
+			}
+		}
+	})"));
+
+    a0_shmobj_t topic;
+	check(a0_topic_manager_open_rpc_client_topic(&tm, "drive_in_circles", &topic));
+
+	a0_alloc_t alloc = a0_realloc_allocator();
+
+	a0_rpc_client_t client;
+	check(a0_rpc_client_init(&client, topic, alloc));
+
+	std::string req_str = "Please do!";
+	a0_buf_t req_payload = {
+		.ptr = (uint8_t*)req_str.c_str(),
+		.size = req_str.size(),
+	};
+
+	a0_packet_t req_pkt;
+	check(a0_packet_build(0, nullptr, req_payload, alloc, &req_pkt));
+
+	a0_packet_callback_t onreply = {
+		.user_data = nullptr,
+		.fn = [](void* user_data, a0_packet_t pkt) {
+			a0_buf_t payload;
+			check(a0_packet_payload(pkt, &payload));
+
+			printf("Recieved reply: %.*s\\n", (int)payload.size, (uint8_t*)payload.ptr);
+		},
+	};
+
+	a0_rpc_send(&client, req_pkt, onreply);
+
+	std::this_thread::sleep_for(std::chrono::seconds(60));
+
+	check(a0_rpc_client_await_close(&client));
+    a0_free_realloc_allocator(alloc);
+    check(a0_shmobj_close(&topic));
+    check(a0_topic_manager_close(&tm));
+
+	std::cout << "Done!" << std::endl;
+}`,
 						},
 						pub_go: {
 							display: 'Publisher (Go)',
