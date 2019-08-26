@@ -64,7 +64,7 @@
 					lang_opts: ['cc', 'go', 'py'],
 					lang_display: {py: 'Python', go: 'Go', cc: 'C++'},
 					selected_lang: undefined,
-					examples: ['pub_cc', 'sub_sync_cc', 'sub_cc',
+					examples: ['pub_cc', 'sub_sync_cc', 'sub_cc', 'rpc_server_cc', 'rpc_client_cc',
 							   'pub_go', 'sub_sync_go', 'sub_go', 'rpc_server_go', 'rpc_client_go',
 							   'pub_py', 'sub_sync_py', 'sub_py', 'rpc_server_py', 'rpc_client_py'],
 					example_info: {
@@ -113,8 +113,8 @@ int main() {
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
-    a0_free_realloc_allocator(alloc);
     check(a0_publisher_close(&p));
+    a0_free_realloc_allocator(alloc);
     check(a0_shmobj_close(&topic));
     check(a0_topic_manager_close(&tm));
 
@@ -176,8 +176,8 @@ int main() {
         printf("I am %.*s\\n", (int)payload.size, (char*)payload.ptr);
     }
 
-    a0_free_realloc_allocator(alloc);
     check(a0_subscriber_sync_close(&sub));
+    a0_free_realloc_allocator(alloc);
     check(a0_shmobj_close(&topic));
     check(a0_topic_manager_close(&tm));
 
@@ -234,14 +234,93 @@ int main() {
 
 	std::this_thread::sleep_for(std::chrono::seconds(60));
 
-    a0_free_realloc_allocator(alloc);
     check(a0_subscriber_await_close(&sub));
+    a0_free_realloc_allocator(alloc);
     check(a0_shmobj_close(&topic));
     check(a0_topic_manager_close(&tm));
 
     std::cout << "Done!" << std::endl;
 }
 `,
+						},
+						rpc_server_cc: {
+							display: 'RPC Server (C)',
+							lang: 'cc',
+							code: `#include <alephzero.h>
+#include <chrono>
+#include <iostream>
+#include <system_error>
+#include <thread>
+
+void check(errno_t err) {
+    if (err) {
+        throw std::system_error(err, std::generic_category());
+    }
+}
+
+int main() {
+	setvbuf(stdout, NULL, _IONBF, 0);
+
+    a0_topic_manager_t tm;
+    check(a0_topic_manager_init_jsonstr(&tm, R"({
+		"container": "stuff_doer"
+    })"));
+
+    a0_shmobj_t topic;
+	check(a0_topic_manager_open_rpc_server_topic(&tm, "navigate", &topic));
+
+	a0_alloc_t alloc = a0_realloc_allocator();
+
+    a0_rpc_server_t server;
+
+	a0_packet_callback_t onrequest = {
+		.user_data = &server,
+		.fn = [](void* user_data, a0_packet_t pkt) {
+			a0_packet_id_t id;
+			check(a0_packet_id(pkt, &id));
+
+			a0_buf_t payload;
+			check(a0_packet_payload(pkt, &payload));
+
+			printf("Request (id=%s): %.*s\\n", id, (int)payload.size, (uint8_t*)payload.ptr);
+
+			std::string reply_str = "No path found. Try again later";
+			a0_buf_t reply_payload {
+				.ptr = (uint8_t*)reply_str.c_str(),
+				.size = reply_str.size(),
+			};
+
+			a0_alloc_t alloc = a0_realloc_allocator();
+			a0_packet_t reply_pkt;
+			check(a0_packet_build(0, nullptr, reply_payload, alloc, &reply_pkt));
+
+			check(a0_rpc_reply((a0_rpc_server_t*)user_data, id, reply_pkt));
+			a0_free_realloc_allocator(alloc);
+		},
+	};
+	a0_packet_id_callback_t oncancel = {
+		.user_data = nullptr,
+		.fn = [](void* user_data, a0_packet_id_t id) {
+			printf("Cancel req: %s\\n", id);
+		},
+	};
+
+	check(a0_rpc_server_init(&server, topic, alloc, onrequest, oncancel));
+
+	std::this_thread::sleep_for(std::chrono::seconds(60));
+
+	check(a0_rpc_server_await_close(&server));
+    a0_free_realloc_allocator(alloc);
+    check(a0_shmobj_close(&topic));
+    check(a0_topic_manager_close(&tm));
+
+	std::cout << "Done!" << std::endl;
+}`,
+						},
+						rpc_client_cc: {
+							display: 'RPC Client (C)',
+							lang: 'cc',
+							code: `// TODO`,
 						},
 						pub_go: {
 							display: 'Publisher (Go)',
