@@ -64,9 +64,64 @@
 					lang_opts: ['cc', 'go', 'py'],
 					lang_display: {py: 'Python', go: 'Go', cc: 'C++'},
 					selected_lang: undefined,
-					examples: ['pub_go', 'sub_sync_go', 'sub_go', 'rpc_server_go', 'rpc_client_go',
+					examples: ['pub_cc',
+							   'pub_go', 'sub_sync_go', 'sub_go', 'rpc_server_go', 'rpc_client_go',
 							   'pub_py', 'sub_sync_py', 'sub_py', 'rpc_server_py', 'rpc_client_py'],
 					example_info: {
+						pub_cc: {
+							display: 'Publisher (C++)',
+							lang: 'cc',
+							code: `#include <a0/alloc.h>
+#include <a0/pubsub.h>
+#include <a0/topic_manager.h>
+
+#include <chrono>
+#include <iostream>
+#include <system_error>
+#include <thread>
+
+void check(errno_t err) {
+    if (err) {
+        throw std::system_error(err, std::generic_category());
+    }
+}
+
+int main() {
+    a0_topic_manager_t tm;
+    check(a0_topic_manager_init_jsonstr(&tm, R"({
+    "container": "localizer"
+})"));
+
+    a0_shmobj_t topic;
+    check(a0_topic_manager_open_publisher_topic(&tm, "location", &topic));
+
+    a0_publisher_t p;
+    check(a0_publisher_init(&p, topic));
+
+    a0_alloc_t alloc = a0_realloc_allocator();
+    for (int i = 0; i < 10; i++) {
+        auto payload = std::string("here (ts=") + std::to_string(i) + std::string(")");
+
+        a0_packet_t pkt;
+        check(a0_packet_build(
+            0, nullptr,
+            a0_buf_t{.ptr = (uint8_t*)payload.data(), .size = payload.size()},
+            alloc,
+            &pkt));
+
+        a0_pub(&p, pkt);
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+
+    a0_free_realloc_allocator(alloc);
+    check(a0_publisher_close(&p));
+    check(a0_shmobj_close(&topic));
+    check(a0_topic_manager_close(&tm));
+
+    std::cout << "Done!" << std::endl;
+}
+`,
+						},
 						pub_go: {
 							display: 'Publisher (Go)',
 							lang: 'go',
