@@ -64,7 +64,7 @@
 					lang_opts: ['cc', 'go', 'py'],
 					lang_display: {py: 'Python', go: 'Go', cc: 'C++'},
 					selected_lang: undefined,
-					examples: ['pub_go', 'sub_sync_go', 'sub_go',
+					examples: ['pub_go', 'sub_sync_go', 'sub_go', 'rpc_server_go', 'rpc_client_go',
 							   'pub_py', 'sub_sync_py', 'sub_py', 'rpc_server_py', 'rpc_client_py'],
 					example_info: {
 						pub_go: {
@@ -214,6 +214,116 @@ func main() {
 	time.Sleep(60 * time.Second)
 
     fmt.Println("Done!")
+}
+`,
+						},
+						rpc_server_go: {
+							display: 'RPC Server (Go)',
+							lang: 'go',
+							code: `package main
+
+import (
+    a0 "github.com/alephzero/go"
+    "fmt"
+    "log"
+    "time"
+)
+
+func check(err error) {
+    if err != nil {
+        log.Panicf("err: %v", err)
+    }
+}
+
+func main() {
+    tm, err := a0.NewTopicManagerFromJSON(\`{
+        "container": "stuff_doer"
+    }\`)
+    check(err)
+    defer tm.Close()
+
+    topic, err := tm.OpenRpcServerTopic("navigate")
+    check(err)
+    defer topic.Close()
+
+	var server a0.RpcServer
+	onrequest := func(pkt a0.Packet) {
+		payload, err := pkt.Payload()
+		check(err)
+		id, err := pkt.Id()
+		check(err)
+		fmt.Printf("Request (id=%v): %v\\n", id, string(payload))
+
+        var hdrs []a0.PacketHeader
+        replyPkt, err := a0.NewPacket(hdrs, []byte("No path found. Try again later"))
+        check(err)
+		check(server.Reply(id, replyPkt))
+	}
+	oncancel := func(id string) {
+		fmt.Printf("Cancel req: %v\\n", id)
+	}
+    server, err = a0.NewRpcServer(topic, onrequest, oncancel)
+    check(err)
+	defer server.AwaitClose()
+
+    time.Sleep(60 * time.Second)
+
+    fmt.Println("Done!")
+}
+`,
+						},
+						rpc_client_go: {
+							display: 'RPC Client (Go)',
+							lang: 'go',
+							code: `package main
+
+import (
+    a0 "github.com/alephzero/go"
+    "fmt"
+    "log"
+    "time"
+)
+
+func check(err error) {
+    if err != nil {
+        log.Panicf("err: %v", err)
+    }
+}
+
+func main() {
+    tm, err := a0.NewTopicManagerFromJSON(\`{
+		"container": "bar",
+		"rpc_client_maps": {
+			"drive_in_circles": {
+				"container": "stuff_doer",
+				"topic": "navigate"
+			}
+		}
+    }\`)
+    check(err)
+    defer tm.Close()
+
+    topic, err := tm.OpenRpcClientTopic("drive_in_circles")
+    check(err)
+    defer topic.Close()
+
+	client, err := a0.NewRpcClient(topic)
+    check(err)
+	defer client.AwaitClose()
+
+	var hdrs []a0.PacketHeader
+	req, err := a0.NewPacket(hdrs, []byte("Please do!"))
+	check(err)
+
+	check(client.Send(req, func(reply a0.Packet) {
+		payload, err := reply.Payload()
+		check(err)
+		fmt.Printf("Recieved reply: %v\\n", string(payload))
+	}))
+
+	time.Sleep(time.Second)
+
+	fmt.Println("Done!")
 }
 `,
 						},
