@@ -64,12 +64,12 @@
 					lang_opts: ['cc', 'go', 'py'],
 					lang_display: {py: 'Python', go: 'Go', cc: 'C++'},
 					selected_lang: undefined,
-					examples: ['pub_cc',
+					examples: ['pub_cc', 'sub_sync_cc', 'sub_cc',
 							   'pub_go', 'sub_sync_go', 'sub_go', 'rpc_server_go', 'rpc_client_go',
 							   'pub_py', 'sub_sync_py', 'sub_py', 'rpc_server_py', 'rpc_client_py'],
 					example_info: {
 						pub_cc: {
-							display: 'Publisher (C++)',
+							display: 'Publisher (C)',
 							lang: 'cc',
 							code: `#include <alephzero.h>
 
@@ -85,10 +85,12 @@ void check(errno_t err) {
 }
 
 int main() {
+	setvbuf(stdout, NULL, _IONBF, 0);
+
     a0_topic_manager_t tm;
     check(a0_topic_manager_init_jsonstr(&tm, R"({
-    "container": "localizer"
-})"));
+        "container": "localizer"
+    })"));
 
     a0_shmobj_t topic;
     check(a0_topic_manager_open_publisher_topic(&tm, "location", &topic));
@@ -113,6 +115,127 @@ int main() {
 
     a0_free_realloc_allocator(alloc);
     check(a0_publisher_close(&p));
+    check(a0_shmobj_close(&topic));
+    check(a0_topic_manager_close(&tm));
+
+    std::cout << "Done!" << std::endl;
+}
+`,
+						},
+						sub_sync_cc: {
+							display: 'Subscriber Sync (C)',
+							lang: 'cc',
+							code: `#include <alephzero.h>
+
+#include <chrono>
+#include <iostream>
+#include <system_error>
+#include <thread>
+
+void check(errno_t err) {
+    if (err) {
+        throw std::system_error(err, std::generic_category());
+    }
+}
+
+int main() {
+	setvbuf(stdout, NULL, _IONBF, 0);
+
+    a0_topic_manager_t tm;
+    check(a0_topic_manager_init_jsonstr(&tm, R"({
+		"container": "controller",
+		"subscriber_maps": {
+			"where_am_I": {
+				"container": "localizer",
+				"topic": "location"
+			}
+		}
+    })"));
+
+    a0_shmobj_t topic;
+    check(a0_topic_manager_open_subscriber_topic(&tm, "where_am_I", &topic));
+
+    a0_alloc_t alloc = a0_realloc_allocator();
+
+    a0_subscriber_sync_t sub;
+    check(a0_subscriber_sync_init(&sub, topic, alloc, A0_INIT_MOST_RECENT, A0_ITER_NEWEST));
+
+    while (true) {
+        bool has_next;
+        check(a0_subscriber_sync_has_next(&sub, &has_next));
+        if (!has_next) {
+            break;
+        }
+
+        a0_packet_t pkt;
+        check(a0_subscriber_sync_next(&sub, &pkt));
+
+        a0_buf_t payload;
+        check(a0_packet_payload(pkt, &payload));
+
+        printf("I am %.*s\\n", (int)payload.size, (char*)payload.ptr);
+    }
+
+    a0_free_realloc_allocator(alloc);
+    check(a0_subscriber_sync_close(&sub));
+    check(a0_shmobj_close(&topic));
+    check(a0_topic_manager_close(&tm));
+
+    std::cout << "Done!" << std::endl;
+}
+`,
+						},
+						sub_cc: {
+							display: 'Subscriber (C)',
+							lang: 'cc',
+							code: `#include <alephzero.h>
+
+#include <chrono>
+#include <iostream>
+#include <system_error>
+#include <thread>
+
+void check(errno_t err) {
+    if (err) {
+        throw std::system_error(err, std::generic_category());
+    }
+}
+
+int main() {
+	setvbuf(stdout, NULL, _IONBF, 0);
+
+    a0_topic_manager_t tm;
+    check(a0_topic_manager_init_jsonstr(&tm, R"({
+		"container": "controller",
+		"subscriber_maps": {
+			"where_am_I": {
+				"container": "localizer",
+				"topic": "location"
+			}
+		}
+    })"));
+
+    a0_shmobj_t topic;
+    check(a0_topic_manager_open_subscriber_topic(&tm, "where_am_I", &topic));
+
+    a0_alloc_t alloc = a0_realloc_allocator();
+
+	a0_packet_callback_t callback = {
+		.user_data = nullptr,
+		.fn = [](void* user_data, a0_packet_t pkt) {
+			a0_buf_t payload;
+			check(a0_packet_payload(pkt, &payload));
+			printf("I am %.*s\\n", (int)payload.size, (char*)payload.ptr);
+		},
+	};
+
+    a0_subscriber_t sub;
+	check(a0_subscriber_init(&sub, topic, alloc, A0_INIT_MOST_RECENT, A0_ITER_NEWEST, callback));
+
+	std::this_thread::sleep_for(std::chrono::seconds(60));
+
+    a0_free_realloc_allocator(alloc);
+    check(a0_subscriber_await_close(&sub));
     check(a0_shmobj_close(&topic));
     check(a0_topic_manager_close(&tm));
 
