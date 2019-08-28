@@ -655,15 +655,13 @@ tm = a0.TopicManager('''{
     "container": "localizer"
 }''')
 
-topic = tm.open_publisher_topic('location')
-p = a0.Publisher(topic)
+p = a0.Publisher(tm.publisher_topic('location'))
 for i in range(10):
-	p.pub(a0.Packet([], 'here (ts={})'.format(i)))
+	payload = 'here (ts={})'.format(i)
+	print('publishing:', payload)
+	p.pub(a0.Packet([], payload))
 	time.sleep(1)
-p.close()
 
-topic.close()
-tm.close()
 print('Done!')
 `,
 						},
@@ -682,14 +680,10 @@ tm = a0.TopicManager('''{
     }
 }''')
 
-topic = tm.open_subscriber_topic('where_am_I')
-sub = a0.SubscriberSync(topic, a0.INIT_MOST_RECENT, a0.ITER_NEWEST)
+sub = a0.SubscriberSync(tm.subscriber_topic('where_am_I'), a0.INIT_OLDEST, a0.ITER_NEXT)
+print('Starting iteration')
 while sub.has_next():
     print('I am', sub.next().payload)
-sub.close()
-
-topic.close()
-tm.close()
 print('Done!')
 `,
 						},
@@ -709,16 +703,12 @@ tm = a0.TopicManager('''{
     }
 }''')
 
-topic = tm.open_subscriber_topic('where_am_I')
-
 def callback(pkt):
 	print('I am', pkt.payload)
-sub = a0.Subscriber(topic, a0.INIT_MOST_RECENT, a0.ITER_NEWEST, callback)
-time.sleep(60)
-sub.close()
 
-topic.close()
-tm.close()
+print('Listening for 60 sec')
+sub = a0.Subscriber(tm.subscriber_topic('where_am_I'), a0.INIT_AWAIT_NEW, a0.ITER_NEWEST, callback)
+time.sleep(60)
 print('Done!')
 `,
 						},
@@ -732,19 +722,16 @@ tm = a0.TopicManager('''{
     "container": "stuff_doer"
 }''')
 
-topic = tm.open_rpc_server_topic('navigate')
-
 def onrequest(pkt):
 	print('Request (id={}):'.format(pkt.id), pkt.payload)
 	server.reply(pkt.id, a0.Packet([], 'No path found. Try again later'))
+
 def oncancel(id):
 	print('Cancel req:', id)
-server = a0.RpcServer(topic, onrequest, oncancel)
-time.sleep(60)
-server.close()
 
-topic.close()
-tm.close()
+print('Listening for 60 sec')
+server = a0.RpcServer(tm.rpc_server_topic('navigate'), onrequest, oncancel)
+time.sleep(60)
 print('Done!')
 `,
 						},
@@ -764,18 +751,14 @@ tm = a0.TopicManager('''{
     }
 }''')
 
-topic = tm.open_rpc_client_topic("drive_in_circles")
-
-client = a0.RpcClient(topic)
+client = a0.RpcClient(tm.rpc_client_topic('drive_in_circles'))
 
 def callback(pkt):
 	print('Recieved reply:', pkt.payload)
-client.send(a0.Packet([], 'Please do!'), callback)
-time.sleep(60)
-client.close()
 
-topic.close()
-tm.close()
+print('Awaiting for 0.01 sec')
+client.send(a0.Packet([], 'Please do!'), callback)
+time.sleep(0.01)
 print('Done!')
 `,
 						},
