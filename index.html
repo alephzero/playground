@@ -58,7 +58,7 @@
 		</div>>
 
 		<script>
-			new Vue({
+			const vueobj = new Vue({
 				el: '#app',
 				data: {
 					lang_opts: ['cc', 'go', 'py'],
@@ -234,7 +234,7 @@ int main() {
 
 	std::this_thread::sleep_for(std::chrono::seconds(60));
 
-    check(a0_subscriber_await_close(&sub));
+    check(a0_subscriber_close(&sub));
     a0_free_realloc_allocator(alloc);
     check(a0_shmobj_close(&topic));
     check(a0_topic_manager_close(&tm));
@@ -309,7 +309,7 @@ int main() {
 
 	std::this_thread::sleep_for(std::chrono::seconds(60));
 
-	check(a0_rpc_server_await_close(&server));
+	check(a0_rpc_server_close(&server));
     a0_free_realloc_allocator(alloc);
     check(a0_shmobj_close(&topic));
     check(a0_topic_manager_close(&tm));
@@ -377,7 +377,7 @@ int main() {
 
 	std::this_thread::sleep_for(std::chrono::seconds(60));
 
-	check(a0_rpc_client_await_close(&client));
+	check(a0_rpc_client_close(&client));
     a0_free_realloc_allocator(alloc);
     check(a0_shmobj_close(&topic));
     check(a0_topic_manager_close(&tm));
@@ -527,7 +527,7 @@ func main() {
 		fmt.Printf("I am %v\\n", string(payload))
 	})
     check(err)
-    defer sub.AwaitClose()
+    defer sub.Close()
 
 	time.Sleep(60 * time.Second)
 
@@ -582,7 +582,7 @@ func main() {
 	}
     server, err = a0.NewRpcServer(topic, onrequest, oncancel)
     check(err)
-	defer server.AwaitClose()
+	defer server.Close()
 
     time.Sleep(60 * time.Second)
 
@@ -627,7 +627,7 @@ func main() {
 
 	client, err := a0.NewRpcClient(topic)
     check(err)
-	defer client.AwaitClose()
+	defer client.Close()
 
 	var hdrs []a0.PacketHeader
 	req, err := a0.NewPacket(hdrs, []byte("Please do!"))
@@ -715,7 +715,7 @@ def callback(pkt):
 	print('I am', pkt.payload)
 sub = a0.Subscriber(topic, a0.INIT_MOST_RECENT, a0.ITER_NEWEST, callback)
 time.sleep(60)
-sub.await_close()
+sub.close()
 
 topic.close()
 tm.close()
@@ -741,7 +741,7 @@ def oncancel(id):
 	print('Cancel req:', id)
 server = a0.RpcServer(topic, onrequest, oncancel)
 time.sleep(60)
-server.await_close()
+server.close()
 
 topic.close()
 tm.close()
@@ -772,7 +772,7 @@ def callback(pkt):
 	print('Recieved reply:', pkt.payload)
 client.send(a0.Packet([], 'Please do!'), callback)
 time.sleep(60)
-client.await_close()
+client.close()
 
 topic.close()
 tm.close()
@@ -794,7 +794,8 @@ print('Done!')
 					setup_code_panel() {
 						const vm = this
 						vm.editor = ace.edit('code')
-						vm.editor.setTheme('ace/theme/tomorrow_night_eighties')
+						vm.editor.setTheme('ace/theme/merbivore_soft')
+						vm.editor.setKeyboardHandler("ace/keyboard/sublime")
 						vm.editor.focus()
 
 						vm.editor.setValue(`print('Hello, World!')\n`, 1)
