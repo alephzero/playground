@@ -37,7 +37,7 @@ class CodeRunner:
         elif self.cmd['lang'] == 'cc':
             bin_file = tempfile.NamedTemporaryFile(delete=False)
             self.proc = await asyncio.create_subprocess_exec(
-                'g++', '-o', bin_file.name, code_file.name, '-lalephzero',
+                'g++', '-D_GLIBCXX_USE_CXX11_ABI=0', '-o', bin_file.name, code_file.name, '-lalephzero',
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE)
             build_result = await self.proc.wait()

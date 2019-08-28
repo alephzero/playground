@@ -69,80 +69,49 @@
 							   'pub_py', 'sub_sync_py', 'sub_py', 'rpc_server_py', 'rpc_client_py'],
 					example_info: {
 						pub_cc: {
-							display: 'Publisher (C)',
+							display: 'Publisher (C++)',
 							lang: 'cc',
-							code: `#include <alephzero.h>
+							code: `#include <alephzero.hpp>
 
 #include <chrono>
 #include <iostream>
 #include <system_error>
 #include <thread>
 
-void check(errno_t err) {
-    if (err) {
-        throw std::system_error(err, std::generic_category());
-    }
-}
-
 int main() {
 	setvbuf(stdout, NULL, _IONBF, 0);
 
-    a0_topic_manager_t tm;
-    check(a0_topic_manager_init_jsonstr(&tm, R"({
+	a0::TopicManager tm(R"({
         "container": "localizer"
-    })"));
+	})");
+	
+	a0::Publisher p(tm.publisher_topic("location"));
 
-    a0_shmobj_t topic;
-    check(a0_topic_manager_open_publisher_topic(&tm, "location", &topic));
-
-    a0_publisher_t p;
-    check(a0_publisher_init(&p, topic));
-
-    a0_alloc_t alloc = a0_realloc_allocator();
-    for (int i = 0; i < 10; i++) {
-        auto payload = std::string("here (ts=") + std::to_string(i) + std::string(")");
-
-        a0_packet_t pkt;
-        check(a0_packet_build(
-            0, nullptr,
-            a0_buf_t{.ptr = (uint8_t*)payload.data(), .size = payload.size()},
-            alloc,
-            &pkt));
-
-        a0_pub(&p, pkt);
+	for (int i = 0; i < 10; i++) {
+		std::string payload = "here (ts=" + std::to_string(i) + ")";
+		std::cout << "publishing: " << payload << std::endl;
+		p.pub(a0::Packet::build({}, payload));
         std::this_thread::sleep_for(std::chrono::seconds(1));
-    }
-
-    check(a0_publisher_close(&p));
-    a0_free_realloc_allocator(alloc);
-    check(a0_shmobj_close(&topic));
-    check(a0_topic_manager_close(&tm));
+	}
 
     std::cout << "Done!" << std::endl;
 }
 `,
 						},
 						sub_sync_cc: {
-							display: 'Subscriber Sync (C)',
+							display: 'Subscriber Sync (C++)',
 							lang: 'cc',
-							code: `#include <alephzero.h>
+							code: `#include <alephzero.hpp>
 
 #include <chrono>
 #include <iostream>
 #include <system_error>
 #include <thread>
 
-void check(errno_t err) {
-    if (err) {
-        throw std::system_error(err, std::generic_category());
-    }
-}
-
 int main() {
 	setvbuf(stdout, NULL, _IONBF, 0);
 
-    a0_topic_manager_t tm;
-    check(a0_topic_manager_init_jsonstr(&tm, R"({
+    a0::TopicManager tm(R"({
 		"container": "controller",
 		"subscriber_maps": {
 			"where_am_I": {
@@ -150,62 +119,33 @@ int main() {
 				"topic": "location"
 			}
 		}
-    })"));
+    })");
 
-    a0_shmobj_t topic;
-    check(a0_topic_manager_open_subscriber_topic(&tm, "where_am_I", &topic));
+	a0::SubscriberSync sub(tm.subscriber_topic("where_am_I"), A0_INIT_OLDEST, A0_ITER_NEXT);
 
-    a0_alloc_t alloc = a0_realloc_allocator();
-
-    a0_subscriber_sync_t sub;
-    check(a0_subscriber_sync_init(&sub, topic, alloc, A0_INIT_MOST_RECENT, A0_ITER_NEWEST));
-
-    while (true) {
-        bool has_next;
-        check(a0_subscriber_sync_has_next(&sub, &has_next));
-        if (!has_next) {
-            break;
-        }
-
-        a0_packet_t pkt;
-        check(a0_subscriber_sync_next(&sub, &pkt));
-
-        a0_buf_t payload;
-        check(a0_packet_payload(pkt, &payload));
-
-        printf("I am %.*s\\n", (int)payload.size, (char*)payload.ptr);
+    while (sub.has_next()) {
+		auto pkt = sub.next();
+		std::cout << "I am " << pkt.payload() << std::endl;
     }
-
-    check(a0_subscriber_sync_close(&sub));
-    a0_free_realloc_allocator(alloc);
-    check(a0_shmobj_close(&topic));
-    check(a0_topic_manager_close(&tm));
 
     std::cout << "Done!" << std::endl;
 }
 `,
 						},
 						sub_cc: {
-							display: 'Subscriber (C)',
+							display: 'Subscriber (C++)',
 							lang: 'cc',
-							code: `#include <alephzero.h>
+							code: `#include <alephzero.hpp>
 
 #include <chrono>
 #include <iostream>
 #include <system_error>
 #include <thread>
 
-void check(errno_t err) {
-    if (err) {
-        throw std::system_error(err, std::generic_category());
-    }
-}
-
 int main() {
 	setvbuf(stdout, NULL, _IONBF, 0);
 
-    a0_topic_manager_t tm;
-    check(a0_topic_manager_init_jsonstr(&tm, R"({
+    a0::TopicManager tm(R"({
 		"container": "controller",
 		"subscriber_maps": {
 			"where_am_I": {
@@ -213,130 +153,68 @@ int main() {
 				"topic": "location"
 			}
 		}
-    })"));
+    })");
 
-    a0_shmobj_t topic;
-    check(a0_topic_manager_open_subscriber_topic(&tm, "where_am_I", &topic));
+	std::cout << "Listening for 60 sec" << std::endl;
 
-    a0_alloc_t alloc = a0_realloc_allocator();
-
-	a0_packet_callback_t callback = {
-		.user_data = nullptr,
-		.fn = [](void* user_data, a0_packet_t pkt) {
-			a0_buf_t payload;
-			check(a0_packet_payload(pkt, &payload));
-			printf("I am %.*s\\n", (int)payload.size, (char*)payload.ptr);
-		},
-	};
-
-    a0_subscriber_t sub;
-	check(a0_subscriber_init(&sub, topic, alloc, A0_INIT_MOST_RECENT, A0_ITER_NEWEST, callback));
+	a0::Subscriber sub(
+		tm.subscriber_topic("where_am_I"),
+		A0_INIT_AWAIT_NEW,
+		A0_ITER_NEWEST,
+		[](const a0::Packet& pkt) {
+			std::cout << "I am " << pkt.payload() << std::endl;
+		});
 
 	std::this_thread::sleep_for(std::chrono::seconds(60));
-
-    check(a0_subscriber_close(&sub));
-    a0_free_realloc_allocator(alloc);
-    check(a0_shmobj_close(&topic));
-    check(a0_topic_manager_close(&tm));
-
     std::cout << "Done!" << std::endl;
 }
 `,
 						},
 						rpc_server_cc: {
-							display: 'RPC Server (C)',
+							display: 'RPC Server (C++)',
 							lang: 'cc',
-							code: `#include <alephzero.h>
+							code: `#include <alephzero.hpp>
 #include <chrono>
 #include <iostream>
 #include <system_error>
 #include <thread>
 
-void check(errno_t err) {
-    if (err) {
-        throw std::system_error(err, std::generic_category());
-    }
-}
-
 int main() {
 	setvbuf(stdout, NULL, _IONBF, 0);
 
-    a0_topic_manager_t tm;
-    check(a0_topic_manager_init_jsonstr(&tm, R"({
+    a0::TopicManager tm(R"({
 		"container": "stuff_doer"
-    })"));
+    })");
 
-    a0_shmobj_t topic;
-	check(a0_topic_manager_open_rpc_server_topic(&tm, "navigate", &topic));
+	std::unique_ptr<a0::RpcServer> server;
 
-	a0_alloc_t alloc = a0_realloc_allocator();
-
-    a0_rpc_server_t server;
-
-	a0_packet_callback_t onrequest = {
-		.user_data = &server,
-		.fn = [](void* user_data, a0_packet_t pkt) {
-			a0_packet_id_t id;
-			check(a0_packet_id(pkt, &id));
-
-			a0_buf_t payload;
-			check(a0_packet_payload(pkt, &payload));
-
-			printf("Request (id=%s): %.*s\\n", id, (int)payload.size, (uint8_t*)payload.ptr);
-
-			std::string reply_str = "No path found. Try again later";
-			a0_buf_t reply_payload {
-				.ptr = (uint8_t*)reply_str.c_str(),
-				.size = reply_str.size(),
-			};
-
-			a0_alloc_t alloc = a0_realloc_allocator();
-			a0_packet_t reply_pkt;
-			check(a0_packet_build(0, nullptr, reply_payload, alloc, &reply_pkt));
-
-			check(a0_rpc_reply((a0_rpc_server_t*)user_data, id, reply_pkt));
-			a0_free_realloc_allocator(alloc);
-		},
+	auto onrequest = [&](const a0::Packet& pkt) {
+		std::cout << "Request (id=" << pkt.id() << "): " << pkt.payload() << std::endl;
+		server->reply(pkt.id(), a0::Packet::build({}, "No path found. Try again later"));
 	};
-	a0_packet_id_callback_t oncancel = {
-		.user_data = nullptr,
-		.fn = [](void* user_data, a0_packet_id_t id) {
-			printf("Cancel req: %s\\n", id);
-		},
+	auto oncancel = [&](const std::string& id) {
+		std::cout << "Cancel req: " << id << std::endl;
 	};
 
-	check(a0_rpc_server_init(&server, topic, alloc, onrequest, oncancel));
-
+	std::cout << "Listening for 60 sec" << std::endl;
+	server = std::make_unique<a0::RpcServer>(tm.rpc_server_topic("navigate"), onrequest, oncancel);
 	std::this_thread::sleep_for(std::chrono::seconds(60));
-
-	check(a0_rpc_server_close(&server));
-    a0_free_realloc_allocator(alloc);
-    check(a0_shmobj_close(&topic));
-    check(a0_topic_manager_close(&tm));
-
 	std::cout << "Done!" << std::endl;
 }`,
 						},
 						rpc_client_cc: {
-							display: 'RPC Client (C)',
+							display: 'RPC Client (C++)',
 							lang: 'cc',
-							code: `#include <alephzero.h>
+							code: `#include <alephzero.hpp>
 #include <chrono>
 #include <iostream>
 #include <system_error>
 #include <thread>
 
-void check(errno_t err) {
-    if (err) {
-        throw std::system_error(err, std::generic_category());
-    }
-}
-
 int main() {
 	setvbuf(stdout, NULL, _IONBF, 0);
 
-    a0_topic_manager_t tm;
-    check(a0_topic_manager_init_jsonstr(&tm, R"({
+    a0::TopicManager tm(R"({
 		"container": "bar",
 		"rpc_client_maps": {
 			"drive_in_circles": {
@@ -344,44 +222,16 @@ int main() {
 				"topic": "navigate"
 			}
 		}
-	})"));
+	})");
 
-    a0_shmobj_t topic;
-	check(a0_topic_manager_open_rpc_client_topic(&tm, "drive_in_circles", &topic));
-
-	a0_alloc_t alloc = a0_realloc_allocator();
-
-	a0_rpc_client_t client;
-	check(a0_rpc_client_init(&client, topic, alloc));
-
-	std::string req_str = "Please do!";
-	a0_buf_t req_payload = {
-		.ptr = (uint8_t*)req_str.c_str(),
-		.size = req_str.size(),
-	};
-
-	a0_packet_t req_pkt;
-	check(a0_packet_build(0, nullptr, req_payload, alloc, &req_pkt));
-
-	a0_packet_callback_t onreply = {
-		.user_data = nullptr,
-		.fn = [](void* user_data, a0_packet_t pkt) {
-			a0_buf_t payload;
-			check(a0_packet_payload(pkt, &payload));
-
-			printf("Recieved reply: %.*s\\n", (int)payload.size, (uint8_t*)payload.ptr);
-		},
-	};
-
-	a0_rpc_send(&client, req_pkt, onreply);
-
-	std::this_thread::sleep_for(std::chrono::seconds(60));
-
-	check(a0_rpc_client_close(&client));
-    a0_free_realloc_allocator(alloc);
-    check(a0_shmobj_close(&topic));
-    check(a0_topic_manager_close(&tm));
-
+	a0::RpcClient client(tm.rpc_client_topic("drive_in_circles"));
+	client.send(
+		a0::Packet::build({}, "Please do!"),
+		[](const a0::Packet& reply) {
+			std::cout << "Recieved reply: " << reply.payload() << std::endl;
+		}
+	);
+	std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	std::cout << "Done!" << std::endl;
 }`,
 						},
