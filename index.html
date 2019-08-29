@@ -186,18 +186,16 @@ int main() {
 		"container": "stuff_doer"
     })");
 
-	std::unique_ptr<a0::RpcServer> server;
-
-	auto onrequest = [&](const a0::Packet& pkt) {
-		std::cout << "Request (id=" << pkt.id() << "): " << pkt.payload() << std::endl;
-		server->reply(pkt.id(), a0::Packet::build({}, "No path found. Try again later"));
+	auto onrequest = [&](a0::RpcRequest req) {
+		std::cout << "Request (id=" << req.pkt().id() << "): " << req.pkt().payload() << std::endl;
+		req.reply(a0::Packet::build({}, "No path found. Try again later"));
 	};
 	auto oncancel = [&](const std::string& id) {
 		std::cout << "Cancel req: " << id << std::endl;
 	};
 
 	std::cout << "Listening for 60 sec" << std::endl;
-	server = std::make_unique<a0::RpcServer>(tm.rpc_server_topic("navigate"), onrequest, oncancel);
+	a0::RpcServer server(tm.rpc_server_topic("navigate"), onrequest, oncancel);
 	std::this_thread::sleep_for(std::chrono::seconds(60));
 	std::cout << "Done!" << std::endl;
 }`,
@@ -414,23 +412,22 @@ func main() {
     check(err)
     defer topic.Close()
 
-	var server a0.RpcServer
-	onrequest := func(pkt a0.Packet) {
-		payload, err := pkt.Payload()
+	onrequest := func(req a0.RpcRequest) {
+		payload, err := req.Packet().Payload()
 		check(err)
-		id, err := pkt.Id()
+		id, err := req.Packet().Id()
 		check(err)
 		fmt.Printf("Request (id=%v): %v\\n", id, string(payload))
 
         var hdrs []a0.PacketHeader
         replyPkt, err := a0.NewPacket(hdrs, []byte("No path found. Try again later"))
         check(err)
-		check(server.Reply(id, replyPkt))
+		check(req.Reply(replyPkt))
 	}
 	oncancel := func(id string) {
 		fmt.Printf("Cancel req: %v\\n", id)
 	}
-    server, err = a0.NewRpcServer(topic, onrequest, oncancel)
+    server, err := a0.NewRpcServer(topic, onrequest, oncancel)
     check(err)
 	defer server.Close()
 
@@ -572,9 +569,9 @@ tm = a0.TopicManager('''{
     "container": "stuff_doer"
 }''')
 
-def onrequest(pkt):
-	print('Request (id={}):'.format(pkt.id), pkt.payload)
-	server.reply(pkt.id, a0.Packet([], 'No path found. Try again later'))
+def onrequest(req):
+	print('Request (id={}):'.format(req.pkt.id), req.pkt.payload)
+	req.reply(a0.Packet([], 'No path found. Try again later'))
 
 def oncancel(id):
 	print('Cancel req:', id)
