@@ -90,7 +90,7 @@ int main() {
 	for (int i = 0; i < 10; i++) {
 		std::string payload = "here (ts=" + std::to_string(i) + ")";
 		std::cout << "publishing: " << payload << std::endl;
-		p.pub(a0::Packet::build({}, payload));
+		p.pub(payload);
         std::this_thread::sleep_for(std::chrono::seconds(1));
 	}
 
@@ -161,7 +161,7 @@ int main() {
 		tm.subscriber_topic("where_am_I"),
 		A0_INIT_AWAIT_NEW,
 		A0_ITER_NEWEST,
-		[](const a0::Packet& pkt) {
+		[](a0::PacketView pkt) {
 			std::cout << "I am " << pkt.payload() << std::endl;
 		});
 
@@ -188,7 +188,7 @@ int main() {
 
 	auto onrequest = [&](a0::RpcRequest req) {
 		std::cout << "Request (id=" << req.pkt().id() << "): " << req.pkt().payload() << std::endl;
-		req.reply(a0::Packet::build({}, "No path found. Try again later"));
+		req.reply("No path found. Try again later");
 	};
 	auto oncancel = [&](const std::string& id) {
 		std::cout << "Cancel req: " << id << std::endl;
@@ -224,7 +224,7 @@ int main() {
 
 	a0::RpcClient client(tm.rpc_client_topic("drive_in_circles"));
 	client.send(
-		a0::Packet::build({}, "Please do!"),
+		"Please do!",
 		[](const a0::Packet& reply) {
 			std::cout << "Recieved reply: " << reply.payload() << std::endl;
 		}
@@ -571,7 +571,7 @@ tm = a0.TopicManager('''{
 
 def onrequest(req):
 	print('Request (id={}):'.format(req.pkt.id), req.pkt.payload)
-	req.reply(a0.Packet([], 'No path found. Try again later'))
+	req.reply('No path found. Try again later')
 
 def oncancel(id):
 	print('Cancel req:', id)
@@ -604,7 +604,7 @@ def callback(pkt):
 	print('Recieved reply:', pkt.payload)
 
 print('Awaiting for 0.01 sec')
-client.send(a0.Packet([], 'Please do!'), callback)
+client.send('Please do!', callback)
 time.sleep(0.01)
 print('Done!')
 `,
