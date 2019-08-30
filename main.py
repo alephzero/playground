@@ -4,7 +4,21 @@ import json
 import tempfile
 
 class Namespace:
-    pass
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
+    def __repr__(self):
+        keys = sorted(self.__dict__)
+        items = ("{}={!r}".format(k, self.__dict__[k]) for k in keys)
+        return "{}({})".format(type(self).__name__, ", ".join(items))
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+
+    def __getattr__(self, name):
+        return self.__dict__.get(name, None)
+
+global_ns = Namespace()
 
 async def root_handler(request):
     return web.FileResponse('/index.html')
@@ -25,6 +39,20 @@ class CodeRunner:
             fd.write(self.cmd['code'])
 
         if self.cmd['lang'] == 'py':
+            py_requirements = open('/alephzero/py/requirements.txt', 'rb').read()
+            if global_ns.py_requirements != py_requirements:
+                # TODO: Forward stderr.
+                proc = await asyncio.create_subprocess_exec(
+                    'pip3', 'install', '-r', 'requirements.txt',
+                    cwd='/alephzero/py')
+                await proc.wait()
+            global_ns.py_requirements = py_requirements
+
+            proc = await asyncio.create_subprocess_exec(
+                'python3', 'setup.py', 'install',
+                cwd='/alephzero/py')
+            await proc.wait()
+
             self.proc = await asyncio.create_subprocess_exec(
                 'python3', '-u', code_file.name,
                 stdout=asyncio.subprocess.PIPE,
@@ -90,7 +118,6 @@ async def run_code_handshake(request):
     await ws.prepare(request)
 
     ns = Namespace()
-    ns.runner = None
     async for msg in ws:
         if msg.type == WSMsgType.TEXT:
             if msg.data == 'close':
