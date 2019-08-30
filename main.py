@@ -38,6 +38,11 @@ class CodeRunner:
         with open(code_file.name, 'w') as fd:
             fd.write(self.cmd['code'])
 
+        proc = await asyncio.create_subprocess_exec(
+            'make', '-j', 'install',
+            cwd='/alephzero/alephzero')
+        await proc.wait()
+
         if self.cmd['lang'] == 'py':
             py_requirements = open('/alephzero/py/requirements.txt', 'rb').read()
             if global_ns.py_requirements != py_requirements:
