@@ -13,8 +13,10 @@ tm = a0.TopicManager('''{
 
 client = a0.RpcClient(tm.rpc_client_topic('drive_in_circles'))
 
+
 def callback(pkt):
-	print('Recieved reply:', pkt.payload)
+    print('Recieved reply:', pkt.payload)
+
 
 print('Awaiting for 0.01 sec')
 client.send('Please do!', callback)
