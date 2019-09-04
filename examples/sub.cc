@@ -9,13 +9,13 @@ int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
 
   a0::TopicManager tm(R"({
-		"container": "controller",
-		"subscriber_maps": {
-			"where_am_I": {
-				"container": "localizer",
-				"topic": "location"
-			}
-		}
+    "container": "controller",
+    "subscriber_maps": {
+      "where_am_I": {
+        "container": "localizer",
+        "topic": "location"
+      }
+    }
   })");
 
   std::cout << "Listening for 60 sec" << std::endl;

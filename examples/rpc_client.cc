@@ -9,14 +9,14 @@ int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
 
   a0::TopicManager tm(R"({
-		"container": "bar",
-		"rpc_client_maps": {
-			"drive_in_circles": {
-				"container": "stuff_doer",
-				"topic": "navigate"
-			}
-		}
-	})");
+    "container": "bar",
+    "rpc_client_maps": {
+      "drive_in_circles": {
+        "container": "stuff_doer",
+        "topic": "navigate"
+      }
+    }
+  })");
 
   a0::RpcClient client(tm.rpc_client_topic("drive_in_circles"));
   client.send("Please do!", [](const a0::Packet& reply) {

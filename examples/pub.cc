@@ -10,7 +10,7 @@ int main() {
 
   a0::TopicManager tm(R"({
     "container": "localizer"
-	})");
+  })");
 
   a0::Publisher p(tm.publisher_topic("location"));
 

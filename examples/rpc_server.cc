@@ -9,7 +9,7 @@ int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
 
   a0::TopicManager tm(R"({
-		"container": "stuff_doer"
+    "container": "stuff_doer"
   })");
 
   auto onrequest = [&](a0::RpcRequest req) {
