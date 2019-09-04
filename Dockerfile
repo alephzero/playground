@@ -26,5 +26,6 @@ RUN pip3 install aiohttp
 WORKDIR /
 COPY main.py /
 COPY index.html /
+COPY examples/ /examples/
 
 CMD ["python3", "main.py"]

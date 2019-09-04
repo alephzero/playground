@@ -139,5 +139,6 @@ async def run_code_handshake(request):
 
 app = web.Application()
 app.add_routes([web.get('/', root_handler),
+                web.static('/examples', '/examples'),
                 web.get('/api/run', run_code_handshake)])
 web.run_app(app, port=12385)

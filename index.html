@@ -71,543 +71,77 @@
 						pub_cc: {
 							display: 'Publisher (C++)',
 							lang: 'cc',
-							code: `#include <a0.h>
-
-#include <chrono>
-#include <iostream>
-#include <system_error>
-#include <thread>
-
-int main() {
-	setvbuf(stdout, NULL, _IONBF, 0);
-
-	a0::TopicManager tm(R"({
-        "container": "localizer"
-	})");
-	
-	a0::Publisher p(tm.publisher_topic("location"));
-
-	for (int i = 0; i < 10; i++) {
-		std::string payload = "here (ts=" + std::to_string(i) + ")";
-		std::cout << "publishing: " << payload << std::endl;
-		p.pub(payload);
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-	}
-
-    std::cout << "Done!" << std::endl;
-}
-`,
+							path: '/examples/pub.cc',
 						},
 						sub_sync_cc: {
 							display: 'Subscriber Sync (C++)',
 							lang: 'cc',
-							code: `#include <a0.h>
-
-#include <chrono>
-#include <iostream>
-#include <system_error>
-#include <thread>
-
-int main() {
-	setvbuf(stdout, NULL, _IONBF, 0);
-
-    a0::TopicManager tm(R"({
-		"container": "controller",
-		"subscriber_maps": {
-			"where_am_I": {
-				"container": "localizer",
-				"topic": "location"
-			}
-		}
-    })");
-
-	a0::SubscriberSync sub(tm.subscriber_topic("where_am_I"), A0_INIT_OLDEST, A0_ITER_NEXT);
-
-    while (sub.has_next()) {
-		auto pkt = sub.next();
-		std::cout << "I am " << pkt.payload() << std::endl;
-    }
-
-    std::cout << "Done!" << std::endl;
-}
-`,
+							path: '/examples/sub_sync.cc',
 						},
 						sub_cc: {
 							display: 'Subscriber (C++)',
 							lang: 'cc',
-							code: `#include <a0.h>
-
-#include <chrono>
-#include <iostream>
-#include <system_error>
-#include <thread>
-
-int main() {
-	setvbuf(stdout, NULL, _IONBF, 0);
-
-    a0::TopicManager tm(R"({
-		"container": "controller",
-		"subscriber_maps": {
-			"where_am_I": {
-				"container": "localizer",
-				"topic": "location"
-			}
-		}
-    })");
-
-	std::cout << "Listening for 60 sec" << std::endl;
-
-	a0::Subscriber sub(
-		tm.subscriber_topic("where_am_I"),
-		A0_INIT_AWAIT_NEW,
-		A0_ITER_NEWEST,
-		[](a0::PacketView pkt) {
-			std::cout << "I am " << pkt.payload() << std::endl;
-		});
-
-	std::this_thread::sleep_for(std::chrono::seconds(60));
-    std::cout << "Done!" << std::endl;
-}
-`,
+							path: '/examples/sub.cc',
 						},
 						rpc_server_cc: {
 							display: 'RPC Server (C++)',
 							lang: 'cc',
-							code: `#include <a0.h>
-#include <chrono>
-#include <iostream>
-#include <system_error>
-#include <thread>
-
-int main() {
-	setvbuf(stdout, NULL, _IONBF, 0);
-
-    a0::TopicManager tm(R"({
-		"container": "stuff_doer"
-    })");
-
-	auto onrequest = [&](a0::RpcRequest req) {
-		std::cout << "Request (id=" << req.pkt().id() << "): " << req.pkt().payload() << std::endl;
-		req.reply("No path found. Try again later");
-	};
-	auto oncancel = [&](const std::string& id) {
-		std::cout << "Cancel req: " << id << std::endl;
-	};
-
-	std::cout << "Listening for 60 sec" << std::endl;
-	a0::RpcServer server(tm.rpc_server_topic("navigate"), onrequest, oncancel);
-	std::this_thread::sleep_for(std::chrono::seconds(60));
-	std::cout << "Done!" << std::endl;
-}`,
+							path: '/examples/rpc_server.cc',
 						},
 						rpc_client_cc: {
 							display: 'RPC Client (C++)',
 							lang: 'cc',
-							code: `#include <a0.h>
-#include <chrono>
-#include <iostream>
-#include <system_error>
-#include <thread>
-
-int main() {
-	setvbuf(stdout, NULL, _IONBF, 0);
-
-    a0::TopicManager tm(R"({
-		"container": "bar",
-		"rpc_client_maps": {
-			"drive_in_circles": {
-				"container": "stuff_doer",
-				"topic": "navigate"
-			}
-		}
-	})");
-
-	a0::RpcClient client(tm.rpc_client_topic("drive_in_circles"));
-	client.send(
-		"Please do!",
-		[](const a0::Packet& reply) {
-			std::cout << "Recieved reply: " << reply.payload() << std::endl;
-		}
-	);
-	std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	std::cout << "Done!" << std::endl;
-}`,
+							path: '/examples/rpc_client.cc',
 						},
 						pub_go: {
 							display: 'Publisher (Go)',
 							lang: 'go',
-							code: `package main
-
-import (
-    a0 "github.com/alephzero/go"
-    "fmt"
-    "log"
-    "time"
-)
-
-func check(err error) {
-    if err != nil {
-        log.Panicf("err: %v", err)
-    }
-}
-
-func main() {
-    tm, err := a0.NewTopicManagerFromJSON(\`{
-        "container": "localizer"
-    }\`)
-    check(err)
-    defer tm.Close()
-
-    topic, err := tm.OpenPublisherTopic("location")
-    check(err)
-    defer topic.Close()
-
-    pub, err := a0.NewPublisher(topic)
-    check(err)
-    defer pub.Close()
-
-    for i := 0; i < 10; i++ {
-        var hdrs []a0.PacketHeader
-        pkt, err := a0.NewPacket(hdrs, []byte(fmt.Sprintf("here (ts=%v)", i)))
-        check(err)
-        check(pub.Pub(pkt))
-        time.Sleep(time.Second)
-    }
-
-    fmt.Println("Done!")
-}
-`,
+							path: '/examples/pub.go',
 						},
 						sub_sync_go: {
 							display: 'Subscriber Sync (Go)',
 							lang: 'go',
-							code: `package main
-
-import (
-    a0 "github.com/alephzero/go"
-    "fmt"
-    "log"
-)
-
-func check(err error) {
-    if err != nil {
-        log.Panicf("err: %v", err)
-    }
-}
-
-func main() {
-    tm, err := a0.NewTopicManagerFromJSON(\`{
-		"container": "controller",
-		"subscriber_maps": {
-			"where_am_I": {
-				"container": "localizer",
-				"topic": "location"
-			}
-		}
-    }\`)
-    check(err)
-    defer tm.Close()
-
-    topic, err := tm.OpenSubscriberTopic("where_am_I")
-    check(err)
-    defer topic.Close()
-
-    sub, err := a0.NewSubscriberSync(topic, a0.INIT_MOST_RECENT, a0.ITER_NEWEST)
-    check(err)
-    defer sub.Close()
-
-    for {
-		hasNext, err := sub.HasNext()
-		check(err)
-		if !hasNext {
-			break
-		}
-		pkt, err := sub.Next()
-		check(err)
-
-		payload, err := pkt.Payload()
-		check(err)
-		fmt.Printf("I am %v\\n", string(payload))
-    }
-
-    fmt.Println("Done!")
-}
-`,
+							path: '/examples/sub_sync.go',
 						},
 						sub_go: {
 							display: 'Subscriber (Go)',
 							lang: 'go',
-							code: `package main
-
-import (
-    a0 "github.com/alephzero/go"
-    "fmt"
-	"log"
-	"time"
-)
-
-func check(err error) {
-    if err != nil {
-        log.Panicf("err: %v", err)
-    }
-}
-
-func main() {
-    tm, err := a0.NewTopicManagerFromJSON(\`{
-		"container": "controller",
-		"subscriber_maps": {
-			"where_am_I": {
-				"container": "localizer",
-				"topic": "location"
-			}
-		}
-    }\`)
-    check(err)
-    defer tm.Close()
-
-    topic, err := tm.OpenSubscriberTopic("where_am_I")
-    check(err)
-    defer topic.Close()
-
-    sub, err := a0.NewSubscriber(topic, a0.INIT_MOST_RECENT, a0.ITER_NEWEST, func(pkt a0.Packet) {
-		payload, err := pkt.Payload()
-		check(err)
-		fmt.Printf("I am %v\\n", string(payload))
-	})
-    check(err)
-    defer sub.Close()
-
-	time.Sleep(60 * time.Second)
-
-    fmt.Println("Done!")
-}
-`,
+							path: '/examples/sub.go',
 						},
 						rpc_server_go: {
 							display: 'RPC Server (Go)',
 							lang: 'go',
-							code: `package main
-
-import (
-    a0 "github.com/alephzero/go"
-    "fmt"
-    "log"
-    "time"
-)
-
-func check(err error) {
-    if err != nil {
-        log.Panicf("err: %v", err)
-    }
-}
-
-func main() {
-    tm, err := a0.NewTopicManagerFromJSON(\`{
-        "container": "stuff_doer"
-    }\`)
-    check(err)
-    defer tm.Close()
-
-    topic, err := tm.OpenRpcServerTopic("navigate")
-    check(err)
-    defer topic.Close()
-
-	onrequest := func(req a0.RpcRequest) {
-		payload, err := req.Packet().Payload()
-		check(err)
-		id, err := req.Packet().Id()
-		check(err)
-		fmt.Printf("Request (id=%v): %v\\n", id, string(payload))
-
-        var hdrs []a0.PacketHeader
-        replyPkt, err := a0.NewPacket(hdrs, []byte("No path found. Try again later"))
-        check(err)
-		check(req.Reply(replyPkt))
-	}
-	oncancel := func(id string) {
-		fmt.Printf("Cancel req: %v\\n", id)
-	}
-    server, err := a0.NewRpcServer(topic, onrequest, oncancel)
-    check(err)
-	defer server.Close()
-
-    time.Sleep(60 * time.Second)
-
-    fmt.Println("Done!")
-}
-`,
+							path: '/examples/rpc_server.go',
 						},
 						rpc_client_go: {
 							display: 'RPC Client (Go)',
 							lang: 'go',
-							code: `package main
-
-import (
-    a0 "github.com/alephzero/go"
-    "fmt"
-    "log"
-    "time"
-)
-
-func check(err error) {
-    if err != nil {
-        log.Panicf("err: %v", err)
-    }
-}
-
-func main() {
-    tm, err := a0.NewTopicManagerFromJSON(\`{
-		"container": "bar",
-		"rpc_client_maps": {
-			"drive_in_circles": {
-				"container": "stuff_doer",
-				"topic": "navigate"
-			}
-		}
-    }\`)
-    check(err)
-    defer tm.Close()
-
-    topic, err := tm.OpenRpcClientTopic("drive_in_circles")
-    check(err)
-    defer topic.Close()
-
-	client, err := a0.NewRpcClient(topic)
-    check(err)
-	defer client.Close()
-
-	var hdrs []a0.PacketHeader
-	req, err := a0.NewPacket(hdrs, []byte("Please do!"))
-	check(err)
-
-	check(client.Send(req, func(reply a0.Packet) {
-		payload, err := reply.Payload()
-		check(err)
-		fmt.Printf("Recieved reply: %v\\n", string(payload))
-	}))
-
-	time.Sleep(time.Second)
-
-	fmt.Println("Done!")
-}
-`,
+							path: '/examples/rpc_client.go',
 						},
 						pub_py: {
 							display: 'Publisher (Py)',
 							lang: 'py',
-							code: `import a0
-import time
-
-tm = a0.TopicManager('''{
-    "container": "localizer"
-}''')
-
-p = a0.Publisher(tm.publisher_topic('location'))
-for i in range(10):
-	payload = 'here (ts={})'.format(i)
-	print('publishing:', payload)
-	p.pub(a0.Packet([], payload))
-	time.sleep(1)
-
-print('Done!')
-`,
+							path: '/examples/pub.py',
 						},
 						sub_sync_py: {
 							display: 'Subscriber Sync (Py)',
 							lang: 'py',
-							code: `import a0
-
-tm = a0.TopicManager('''{
-    "container": "controller",
-    "subscriber_maps": {
-        "where_am_I": {
-            "container": "localizer",
-            "topic": "location"
-        }
-    }
-}''')
-
-sub = a0.SubscriberSync(tm.subscriber_topic('where_am_I'), a0.INIT_OLDEST, a0.ITER_NEXT)
-print('Starting iteration')
-while sub.has_next():
-    print('I am', sub.next().payload)
-print('Done!')
-`,
+							path: '/examples/sub_sync.py',
 						},
 						sub_py: {
 							display: 'Subscriber (Py)',
 							lang: 'py',
-							code: `import a0
-import time
-
-tm = a0.TopicManager('''{
-    "container": "Endor",
-    "subscriber_maps": {
-        "where_am_I": {
-            "container": "localizer",
-            "topic": "location"
-        }
-    }
-}''')
-
-def callback(pkt):
-	print('I am', pkt.payload)
-
-print('Listening for 60 sec')
-sub = a0.Subscriber(tm.subscriber_topic('where_am_I'), a0.INIT_AWAIT_NEW, a0.ITER_NEWEST, callback)
-time.sleep(60)
-print('Done!')
-`,
+							path: '/examples/sub.py',
 						},
 						rpc_server_py: {
 							display: 'RPC Server (Py)',
 							lang: 'py',
-							code: `import a0
-import time
-
-tm = a0.TopicManager('''{
-    "container": "stuff_doer"
-}''')
-
-def onrequest(req):
-	print('Request (id={}):'.format(req.pkt.id), req.pkt.payload)
-	req.reply('No path found. Try again later')
-
-def oncancel(id):
-	print('Cancel req:', id)
-
-print('Listening for 60 sec')
-server = a0.RpcServer(tm.rpc_server_topic('navigate'), onrequest, oncancel)
-time.sleep(60)
-print('Done!')
-`,
+							path: '/examples/rpc_server.py',
 						},
 						rpc_client_py: {
 							display: 'RPC Client (Py)',
 							lang: 'py',
-							code: `import a0
-import time
-
-tm = a0.TopicManager('''{
-    "container": "bar",
-    "rpc_client_maps": {
-        "drive_in_circles": {
-            "container": "stuff_doer",
-            "topic": "navigate"
-        }
-    }
-}''')
-
-client = a0.RpcClient(tm.rpc_client_topic('drive_in_circles'))
-
-def callback(pkt):
-	print('Recieved reply:', pkt.payload)
-
-print('Awaiting for 0.01 sec')
-client.send('Please do!', callback)
-time.sleep(0.01)
-print('Done!')
-`,
+							path: '/examples/rpc_client.py',
 						},
 					},
 					editor: undefined,
@@ -682,7 +216,9 @@ print('Done!')
 						vm.code_stderr = ''
 
 						vm.select_lang(example.lang)
-						vm.editor.setValue(example.code, 1)
+						fetch(example.path)
+						.then((r) => { return r.text() })
+						.then((code) => { vm.editor.setValue(code, 1) })
 					}
 				}
 			})
