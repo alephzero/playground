@@ -9,7 +9,7 @@ int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
 
   a0::TopicManager tm(R"({
-        "container": "localizer"
+    "container": "localizer"
 	})");
 
   a0::Publisher p(tm.publisher_topic("location"));

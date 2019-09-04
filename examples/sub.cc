@@ -16,7 +16,7 @@ int main() {
 				"topic": "location"
 			}
 		}
-    })");
+  })");
 
   std::cout << "Listening for 60 sec" << std::endl;
 

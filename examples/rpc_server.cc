@@ -10,7 +10,7 @@ int main() {
 
   a0::TopicManager tm(R"({
 		"container": "stuff_doer"
-    })");
+  })");
 
   auto onrequest = [&](a0::RpcRequest req) {
     std::cout << "Request (id=" << req.pkt().id() << "): " << req.pkt().payload() << std::endl;
