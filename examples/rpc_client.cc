@@ -19,7 +19,7 @@ int main() {
   })");
 
   a0::RpcClient client(tm.rpc_client_topic("drive_in_circles"));
-  client.send("Please do!", [](const a0::Packet& reply) {
+  client.send("Please do!", [](a0::PacketView reply) {
     std::cout << "Recieved reply: " << reply.payload() << std::endl;
   });
   std::this_thread::sleep_for(std::chrono::milliseconds(1));

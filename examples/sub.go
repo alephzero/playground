@@ -22,7 +22,7 @@ func main() {
 				"topic": "location"
 			}
 		}
-    }`)
+	}`)
 	check(err)
 	defer tm.Close()
 

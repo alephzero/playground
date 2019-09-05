@@ -15,8 +15,8 @@ func check(err error) {
 
 func main() {
 	tm, err := a0.NewTopicManagerFromJSON(`{
-        "container": "localizer"
-    }`)
+		"container": "localizer"
+	}`)
 	check(err)
 	defer tm.Close()
 

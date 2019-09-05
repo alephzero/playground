@@ -21,8 +21,8 @@ int main() {
   a0::SubscriberSync sub(tm.subscriber_topic("where_am_I"), A0_INIT_OLDEST, A0_ITER_NEXT);
 
   while (sub.has_next()) {
-    auto pkt = sub.next();
-    std::cout << "I am " << pkt.payload() << std::endl;
+    auto pkt_view = sub.next();
+    std::cout << "I am " << pkt_view.payload() << std::endl;
   }
 
   std::cout << "Done!" << std::endl;

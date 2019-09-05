@@ -22,7 +22,7 @@ func main() {
 				"topic": "navigate"
 			}
 		}
-    }`)
+	}`)
 	check(err)
 	defer tm.Close()
 
