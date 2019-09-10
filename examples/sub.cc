@@ -8,7 +8,7 @@
 int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
 
-  a0::TopicManager tm(R"({
+  a0::InitGlobalTopicManager(R"({
     "container": "controller",
     "subscriber_maps": {
       "where_am_I": {
@@ -20,7 +20,7 @@ int main() {
 
   std::cout << "Listening for 60 sec" << std::endl;
 
-  a0::Subscriber sub(tm.subscriber_topic("where_am_I"),
+  a0::Subscriber sub("where_am_I",
                      A0_INIT_AWAIT_NEW,
                      A0_ITER_NEWEST,
                      [](a0::PacketView pkt) {

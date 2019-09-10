@@ -8,11 +8,11 @@
 int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
 
-  a0::TopicManager tm(R"({
+  a0::InitGlobalTopicManager(R"({
     "container": "localizer"
   })");
 
-  a0::Publisher p(tm.publisher_topic("location"));
+  a0::Publisher p("location");
 
   for (int i = 0; i < 10; i++) {
     std::string payload = "here (ts=" + std::to_string(i) + ")";

@@ -8,7 +8,7 @@
 int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
 
-  a0::TopicManager tm(R"({
+  a0::InitGlobalTopicManager(R"({
     "container": "controller",
     "subscriber_maps": {
       "where_am_I": {
@@ -18,7 +18,7 @@ int main() {
     }
   })");
 
-  a0::SubscriberSync sub(tm.subscriber_topic("where_am_I"), A0_INIT_OLDEST, A0_ITER_NEXT);
+  a0::SubscriberSync sub("where_am_I", A0_INIT_OLDEST, A0_ITER_NEXT);
 
   while (sub.has_next()) {
     auto pkt_view = sub.next();

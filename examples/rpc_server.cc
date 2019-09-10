@@ -8,7 +8,7 @@
 int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
 
-  a0::TopicManager tm(R"({
+  a0::InitGlobalTopicManager(R"({
     "container": "stuff_doer"
   })");
 
@@ -21,7 +21,7 @@ int main() {
   };
 
   std::cout << "Listening for 60 sec" << std::endl;
-  a0::RpcServer server(tm.rpc_server_topic("navigate"), onrequest, oncancel);
+  a0::RpcServer server("navigate", onrequest, oncancel);
   std::this_thread::sleep_for(std::chrono::seconds(60));
   std::cout << "Done!" << std::endl;
 }
