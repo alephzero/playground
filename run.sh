@@ -44,4 +44,5 @@ docker run                         \
   $IPC                             \
   -v ${PWD}/main.py:/main.py       \
   -v ${PWD}/index.html:/index.html \
+  -v ${PWD}/examples:/examples     \
   alephzero_playground

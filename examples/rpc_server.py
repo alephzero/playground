@@ -1,7 +1,7 @@
 import a0
 import time
 
-tm = a0.TopicManager('''{
+a0.InitGlobalTopicManager('''{
     "container": "stuff_doer"
 }''')
 
@@ -16,6 +16,6 @@ def oncancel(id):
 
 
 print('Listening for 60 sec')
-server = a0.RpcServer(tm.rpc_server_topic('navigate'), onrequest, oncancel)
+server = a0.RpcServer('navigate', onrequest, oncancel)
 time.sleep(60)
 print('Done!')

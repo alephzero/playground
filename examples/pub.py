@@ -1,11 +1,11 @@
 import a0
 import time
 
-tm = a0.TopicManager('''{
+a0.InitGlobalTopicManager('''{
     "container": "localizer"
 }''')
 
-p = a0.Publisher(tm.publisher_topic('location'))
+p = a0.Publisher('location')
 for i in range(10):
     payload = 'here (ts={})'.format(i)
     print('publishing:', payload)

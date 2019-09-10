@@ -1,7 +1,7 @@
 import a0
 import time
 
-tm = a0.TopicManager('''{
+a0.InitGlobalTopicManager('''{
     "container": "bar",
     "rpc_client_maps": {
         "drive_in_circles": {
@@ -11,7 +11,7 @@ tm = a0.TopicManager('''{
     }
 }''')
 
-client = a0.RpcClient(tm.rpc_client_topic('drive_in_circles'))
+client = a0.RpcClient('drive_in_circles')
 
 
 def callback(pkt):

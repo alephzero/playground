@@ -1,6 +1,6 @@
 import a0
 
-tm = a0.TopicManager('''{
+a0.InitGlobalTopicManager('''{
     "container": "controller",
     "subscriber_maps": {
         "where_am_I": {
@@ -11,7 +11,7 @@ tm = a0.TopicManager('''{
 }''')
 
 sub = a0.SubscriberSync(
-    tm.subscriber_topic('where_am_I'),
+    'where_am_I',
     a0.INIT_OLDEST,
     a0.ITER_NEXT)
 print('Starting iteration')
