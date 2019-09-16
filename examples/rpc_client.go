@@ -14,7 +14,7 @@ func check(err error) {
 }
 
 func main() {
-	tm, err := a0.NewTopicManagerFromJSON(`{
+	tm, err := a0.NewTopicManager(`{
 		"container": "bar",
 		"rpc_client_maps": {
 			"drive_in_circles": {

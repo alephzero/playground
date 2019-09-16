@@ -14,7 +14,7 @@ func check(err error) {
 }
 
 func main() {
-	tm, err := a0.NewTopicManagerFromJSON(`{
+	tm, err := a0.NewTopicManager(`{
 		"container": "controller",
 		"subscriber_maps": {
 			"where_am_I": {

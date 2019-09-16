@@ -32,7 +32,15 @@
 								Example
 							</a>
 							<div class="navbar-dropdown">
-								<a class="navbar-item" v-for="ex in examples" @click="select_example(example_info[ex])">
+								<a class="navbar-item" v-for="ex in examples_cc" @click="select_example(example_info[ex])">
+									{{example_info[ex].display}}
+								</a>
+								<hr class="navbar-divider">
+								<a class="navbar-item" v-for="ex in examples_go" @click="select_example(example_info[ex])">
+									{{example_info[ex].display}}
+								</a>
+								<hr class="navbar-divider">
+								<a class="navbar-item" v-for="ex in examples_py" @click="select_example(example_info[ex])">
 									{{example_info[ex].display}}
 								</a>
 							</div>
@@ -67,6 +75,10 @@
 					examples: ['pub_cc', 'sub_sync_cc', 'sub_cc', 'rpc_server_cc', 'rpc_client_cc',
 							   'pub_go', 'sub_sync_go', 'sub_go', 'rpc_server_go', 'rpc_client_go',
 							   'pub_py', 'sub_sync_py', 'sub_py', 'rpc_server_py', 'rpc_client_py'],
+
+					examples_cc: ['pub_cc', 'sub_sync_cc', 'sub_cc', 'rpc_server_cc', 'rpc_client_cc'],
+					examples_go: ['pub_go', 'sub_sync_go', 'sub_go', 'rpc_server_go', 'rpc_client_go'],
+					examples_py: ['pub_py', 'sub_sync_py', 'sub_py', 'rpc_server_py', 'rpc_client_py'],
 					example_info: {
 						pub_cc: {
 							display: 'Publisher (C++)',
