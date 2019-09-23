@@ -1,6 +1,6 @@
 FROM alpine:3.10
 
-RUN apk add --no-cache g++ git go make python3-dev
+RUN apk add --no-cache g++ git go linux-headers make python3-dev
 
 RUN mkdir -p /alephzero
 
