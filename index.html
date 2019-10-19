@@ -32,16 +32,19 @@
 								Example
 							</a>
 							<div class="navbar-dropdown">
-								<a class="navbar-item" v-for="ex in examples_cc" @click="select_example(example_info[ex])">
-									{{example_info[ex].display}}
+								<div class="navbar-item"><b>{{lang_display["cc"]}}</b></div>
+								<a class="navbar-item" v-for="ex in examples_cc" @click="select_example(ex)">
+									{{ex.display}}
 								</a>
 								<hr class="navbar-divider">
-								<a class="navbar-item" v-for="ex in examples_go" @click="select_example(example_info[ex])">
-									{{example_info[ex].display}}
+								<div class="navbar-item"><b>{{lang_display["go"]}}</b></div>
+								<a class="navbar-item" v-for="ex in examples_go" @click="select_example(ex)">
+									{{ex.display}}
 								</a>
 								<hr class="navbar-divider">
-								<a class="navbar-item" v-for="ex in examples_py" @click="select_example(example_info[ex])">
-									{{example_info[ex].display}}
+								<div class="navbar-item"><b>{{lang_display["py"]}}</b></div>
+								<a class="navbar-item" v-for="ex in examples_py" @click="select_example(ex)">
+									{{ex.display}}
 								</a>
 							</div>
 						</div>
@@ -63,99 +66,86 @@
 					</div>
 				</div>
 			</div>
-		</div>>
+		</div>
 
 		<script>
 			const vueobj = new Vue({
 				el: '#app',
 				data: {
 					lang_opts: ['cc', 'go', 'py'],
-					lang_display: {py: 'Python', go: 'Go', cc: 'C++'},
+					lang_display: {cc: 'C++', go: 'Go', py: 'Python'},
 					selected_lang: undefined,
-					examples: ['pub_cc', 'sub_sync_cc', 'sub_cc', 'rpc_server_cc', 'rpc_client_cc',
-							   'pub_go', 'sub_sync_go', 'sub_go', 'rpc_server_go', 'rpc_client_go',
-							   'pub_py', 'sub_sync_py', 'sub_py', 'rpc_server_py', 'rpc_client_py'],
-
-					examples_cc: ['pub_cc', 'sub_sync_cc', 'sub_cc', 'rpc_server_cc', 'rpc_client_cc'],
-					examples_go: ['pub_go', 'sub_sync_go', 'sub_go', 'rpc_server_go', 'rpc_client_go'],
-					examples_py: ['pub_py', 'sub_sync_py', 'sub_py', 'rpc_server_py', 'rpc_client_py'],
-					example_info: {
-						pub_cc: {
-							display: 'Publisher (C++)',
+					examples: [
+						{
+							display: 'Publisher',
 							lang: 'cc',
 							path: '/examples/pub.cc',
-						},
-						sub_sync_cc: {
-							display: 'Subscriber Sync (C++)',
+						}, {
+							display: 'Subscriber Sync',
 							lang: 'cc',
 							path: '/examples/sub_sync.cc',
-						},
-						sub_cc: {
-							display: 'Subscriber (C++)',
+						}, {
+							display: 'Subscriber',
 							lang: 'cc',
 							path: '/examples/sub.cc',
-						},
-						rpc_server_cc: {
-							display: 'RPC Server (C++)',
+						}, {
+							display: 'RPC Server',
 							lang: 'cc',
 							path: '/examples/rpc_server.cc',
-						},
-						rpc_client_cc: {
-							display: 'RPC Client (C++)',
+						}, {
+							display: 'RPC Client',
 							lang: 'cc',
 							path: '/examples/rpc_client.cc',
-						},
-						pub_go: {
-							display: 'Publisher (Go)',
+						}, {
+							display: 'Publisher',
 							lang: 'go',
 							path: '/examples/pub.go',
-						},
-						sub_sync_go: {
-							display: 'Subscriber Sync (Go)',
+						}, {
+							display: 'Subscriber Sync',
 							lang: 'go',
 							path: '/examples/sub_sync.go',
-						},
-						sub_go: {
-							display: 'Subscriber (Go)',
+						}, {
+							display: 'Subscriber',
 							lang: 'go',
 							path: '/examples/sub.go',
-						},
-						rpc_server_go: {
-							display: 'RPC Server (Go)',
+						}, {
+							display: 'RPC Server',
 							lang: 'go',
 							path: '/examples/rpc_server.go',
-						},
-						rpc_client_go: {
-							display: 'RPC Client (Go)',
+						}, {
+							display: 'RPC Client',
 							lang: 'go',
 							path: '/examples/rpc_client.go',
-						},
-						pub_py: {
-							display: 'Publisher (Py)',
+						}, {
+							display: 'Publisher',
 							lang: 'py',
 							path: '/examples/pub.py',
-						},
-						sub_sync_py: {
-							display: 'Subscriber Sync (Py)',
+						}, {
+							display: 'Subscriber Sync',
 							lang: 'py',
 							path: '/examples/sub_sync.py',
-						},
-						sub_py: {
-							display: 'Subscriber (Py)',
+						}, {
+							display: 'Subscriber',
 							lang: 'py',
 							path: '/examples/sub.py',
-						},
-						rpc_server_py: {
-							display: 'RPC Server (Py)',
+						}, {
+							display: 'RPC Server',
 							lang: 'py',
 							path: '/examples/rpc_server.py',
-						},
-						rpc_client_py: {
-							display: 'RPC Client (Py)',
+						}, {
+							display: 'RPC Client',
 							lang: 'py',
 							path: '/examples/rpc_client.py',
+						}, {
+							display: 'PRPC Server',
+							lang: 'py',
+							path: '/examples/prpc_server.py',
+						}, {
+							display: 'PRPC Client',
+							lang: 'py',
+							path: '/examples/prpc_client.py',
 						},
-					},
+					],
 					editor: undefined,
 					code_stdout: '',
 					code_stderr: '',
@@ -165,6 +155,17 @@
 					const vm = this
 					const ace_script = document.querySelector('#ace')
 					ace_script.onload = vm.setup_code_panel
+				},
+				computed: {
+					examples_cc() {
+						return this.examples.filter(ex => ex.lang == 'cc')
+					},
+					examples_go() {
+						return this.examples.filter(ex => ex.lang == 'go')
+					},
+					examples_py() {
+						return this.examples.filter(ex => ex.lang == 'py')
+					},
 				},
 				methods: {
 					setup_code_panel() {
