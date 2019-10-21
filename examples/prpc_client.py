@@ -11,7 +11,7 @@ a0.InitGlobalTopicManager('''{
     }
 }''')
 
-client = a0.RpcClient('drive_in_circles')
+client = a0.PrpcClient('drive_in_circles')
 
 
 def callback(pkt, done):
@@ -21,6 +21,6 @@ def callback(pkt, done):
 
 
 print('Awaiting for 1 sec')
-client.send('Please do!', callback)
+client.connect('Please do!', callback)
 time.sleep(1)
 print('Done!')
