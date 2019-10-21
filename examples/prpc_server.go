@@ -29,7 +29,7 @@ func main() {
 		check(err)
 		id, err := conn.Packet().Id()
 		check(err)
-		fmt.Printf("Request (id=%v): %v\n", id, string(payload))
+		fmt.Printf("Connection (id=%v): %v\n", id, string(payload))
 
 		var hdrs []a0.PacketHeader
 		pkt0, err := a0.NewPacket(hdrs, []byte("msg 0"))

@@ -10,7 +10,7 @@ int main() {
 
   a0::InitGlobalTopicManager(R"({
     "container": "bar",
-    "rpc_client_maps": {
+    "prpc_client_maps": {
       "drive_in_circles": {
         "container": "stuff_doer",
         "topic": "navigate"
@@ -19,12 +19,12 @@ int main() {
   })");
 
   a0::PrpcClient client("drive_in_circles");
-  client.send("Please do!", [](a0::PacketView reply, bool done) {
+  client.connect("Please do!", [](a0::PacketView reply, bool done) {
     std::cout << "Recieved reply: " << reply.payload() << std::endl;
     if (done) {
       std::cout << "Completed!" << std::endl;
     }
   });
-  std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  std::this_thread::sleep_for(std::chrono::seconds(1));
   std::cout << "Done!" << std::endl;
 }

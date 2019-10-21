@@ -7,7 +7,7 @@ a0.InitGlobalTopicManager('''{
 
 
 def onconnect(conn):
-    print('Connection (id={}):'.format(conn.pkt.id), req.pkt.payload)
+    print('Connection (id={}):'.format(conn.pkt.id), conn.pkt.payload)
     for i in range(3):
         conn.send(f'msg {i}', False)
         time.sleep(0.1)
