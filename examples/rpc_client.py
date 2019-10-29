@@ -1,24 +1,26 @@
 import a0
+import json
 import time
 
-a0.InitGlobalTopicManager('''{
-    "container": "bar",
-    "rpc_client_maps": {
-        "drive_in_circles": {
-            "container": "stuff_doer",
-            "topic": "navigate"
-        }
-    }
-}''')
+a0.InitGlobalTopicManager(
+    json.dumps({
+        'container': 'www',
+        'rpc_client_maps': {
+            'ddd': {
+                'container': 'xxx',
+                'topic': 'ccc'
+            }
+        },
+    }))
 
-client = a0.RpcClient('drive_in_circles')
-
-
-def callback(pkt):
-    print('Recieved reply:', pkt.payload)
+client = a0.RpcClient('ddd')
 
 
-print('Awaiting for 0.01 sec')
-client.send('Please do!', callback)
-time.sleep(0.01)
+def callback(pkt_view):
+  print(f'Recieved reply: {pkt_view.payload.decode("utf-8")}')
+
+
+print('Waiting 1ms for response')
+client.send('client msg', callback)
+time.sleep(0.001)
 print('Done!')

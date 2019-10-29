@@ -15,12 +15,12 @@ func check(err error) {
 
 func main() {
 	tm, err := a0.NewTopicManager(`{
-		"container": "stuff_doer"
-	}`)
+  "container": "vvv"
+}`)
 	check(err)
 	defer tm.Close()
 
-	topic, err := tm.OpenPrpcServerTopic("navigate")
+	topic, err := tm.OpenPrpcServerTopic("eee")
 	check(err)
 	defer topic.Close()
 
@@ -31,19 +31,20 @@ func main() {
 		check(err)
 		fmt.Printf("Connection (id=%v): %v\n", id, string(payload))
 
-		var hdrs []a0.PacketHeader
-		pkt0, err := a0.NewPacket(hdrs, []byte("msg 0"))
-		check(err)
-		check(conn.Send(pkt0, false))
+		for i := 0; i < 3; i++ {
+			pkt, err := a0.NewPacket(nil, []byte(fmt.Sprintf("msg %v", i)))
+			check(err)
+			check(conn.Send(pkt, false))
+		}
 
-		pkt1, err := a0.NewPacket(hdrs, []byte("msg 1"))
+		pkt, err := a0.NewPacket(nil, []byte("final msg"))
 		check(err)
-		check(conn.Send(pkt1, true))
+		check(conn.Send(pkt, true))
 	}
-	oncancel := func(id string) {
-		fmt.Printf("Cancel req: %v\n", id)
-	}
-	server, err := a0.NewPrpcServer(topic, onconnect, oncancel)
+
+	fmt.Println("Listening for 60 sec")
+
+	server, err := a0.NewPrpcServer(topic, onconnect, nil)
 	check(err)
 	defer server.Close()
 
@@ -51,4 +52,3 @@ func main() {
 
 	fmt.Println("Done!")
 }
-

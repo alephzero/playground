@@ -15,25 +15,27 @@ func check(err error) {
 
 func main() {
 	tm, err := a0.NewTopicManager(`{
-		"container": "controller",
-		"subscriber_maps": {
-			"where_am_I": {
-				"container": "localizer",
-				"topic": "location"
-			}
-		}
-	}`)
+  "container": "yyy",
+  "subscriber_maps": {
+    "bbb": {
+      "container": "zzz",
+      "topic": "aaa"
+    }
+  }
+}`)
 	check(err)
 	defer tm.Close()
 
-	topic, err := tm.OpenSubscriberTopic("where_am_I")
+	topic, err := tm.OpenSubscriberTopic("bbb")
 	check(err)
 	defer topic.Close()
 
-	sub, err := a0.NewSubscriber(topic, a0.INIT_MOST_RECENT, a0.ITER_NEWEST, func(pkt a0.Packet) {
+	fmt.Println("Listening for 60 sec")
+
+	sub, err := a0.NewSubscriber(topic, a0.INIT_AWAIT_NEW, a0.ITER_NEWEST, func(pkt a0.Packet) {
 		payload, err := pkt.Payload()
 		check(err)
-		fmt.Printf("I am %v\n", string(payload))
+		fmt.Printf("Got: %v\n", string(payload))
 	})
 	check(err)
 	defer sub.Close()

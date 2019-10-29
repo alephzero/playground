@@ -15,12 +15,12 @@ func check(err error) {
 
 func main() {
 	tm, err := a0.NewTopicManager(`{
-		"container": "localizer"
-	}`)
+  "container": "zzz"
+}`)
 	check(err)
 	defer tm.Close()
 
-	topic, err := tm.OpenPublisherTopic("location")
+	topic, err := tm.OpenPublisherTopic("aaa")
 	check(err)
 	defer topic.Close()
 
@@ -29,8 +29,9 @@ func main() {
 	defer pub.Close()
 
 	for i := 0; i < 10; i++ {
-		var hdrs []a0.PacketHeader
-		pkt, err := a0.NewPacket(hdrs, []byte(fmt.Sprintf("here (ts=%v)", i)))
+		payload := fmt.Sprintf("here (ts=%v)", i)
+		fmt.Printf("publishing: %v\n", payload)
+		pkt, err := a0.NewPacket(nil, []byte(payload))
 		check(err)
 		check(pub.Pub(pkt))
 		time.Sleep(time.Second)

@@ -15,18 +15,18 @@ func check(err error) {
 
 func main() {
 	tm, err := a0.NewTopicManager(`{
-		"container": "bar",
-		"rpc_client_maps": {
-			"drive_in_circles": {
-				"container": "stuff_doer",
-				"topic": "navigate"
-			}
-		}
-	}`)
+  "container": "www",
+  "rpc_client_maps": {
+    "ddd": {
+      "container": "xxx",
+      "topic": "ccc"
+    }
+  }
+}`)
 	check(err)
 	defer tm.Close()
 
-	topic, err := tm.OpenRpcClientTopic("drive_in_circles")
+	topic, err := tm.OpenRpcClientTopic("ddd")
 	check(err)
 	defer topic.Close()
 
@@ -34,9 +34,10 @@ func main() {
 	check(err)
 	defer client.Close()
 
-	var hdrs []a0.PacketHeader
-	req, err := a0.NewPacket(hdrs, []byte("Please do!"))
+	req, err := a0.NewPacket(nil, []byte("client msg"))
 	check(err)
+
+	fmt.Println("Waiting 1ms for response")
 
 	check(client.Send(req, func(reply a0.Packet) {
 		payload, err := reply.Payload()
@@ -44,7 +45,7 @@ func main() {
 		fmt.Printf("Recieved reply: %v\n", string(payload))
 	}))
 
-	time.Sleep(time.Second)
+	time.Sleep(time.Millisecond)
 
 	fmt.Println("Done!")
 }

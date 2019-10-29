@@ -15,12 +15,12 @@ func check(err error) {
 
 func main() {
 	tm, err := a0.NewTopicManager(`{
-		"container": "stuff_doer"
-	}`)
+  "container": "xxx"
+}`)
 	check(err)
 	defer tm.Close()
 
-	topic, err := tm.OpenRpcServerTopic("navigate")
+	topic, err := tm.OpenRpcServerTopic("ccc")
 	check(err)
 	defer topic.Close()
 
@@ -31,15 +31,14 @@ func main() {
 		check(err)
 		fmt.Printf("Request (id=%v): %v\n", id, string(payload))
 
-		var hdrs []a0.PacketHeader
-		replyPkt, err := a0.NewPacket(hdrs, []byte("No path found. Try again later"))
+		replyPkt, err := a0.NewPacket(nil, []byte(fmt.Sprintf("echo %v", string(payload))))
 		check(err)
 		check(req.Reply(replyPkt))
 	}
-	oncancel := func(id string) {
-		fmt.Printf("Cancel req: %v\n", id)
-	}
-	server, err := a0.NewRpcServer(topic, onrequest, oncancel)
+
+	fmt.Println("Listening for 60 sec")
+
+	server, err := a0.NewRpcServer(topic, onrequest, nil)
 	check(err)
 	defer server.Close()
 

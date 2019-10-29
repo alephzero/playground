@@ -1,27 +1,22 @@
 #include <a0.h>
-
-#include <chrono>
 #include <iostream>
-#include <system_error>
-#include <thread>
 
 int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
 
   a0::InitGlobalTopicManager(R"({
-    "container": "stuff_doer"
+    "container": "xxx"
   })");
 
   auto onrequest = [&](a0::RpcRequest req) {
-    std::cout << "Request (id=" << req.pkt().id() << "): " << req.pkt().payload() << std::endl;
-    req.reply("No path found. Try again later");
-  };
-  auto oncancel = [&](const std::string& id) {
-    std::cout << "Cancel req: " << id << std::endl;
+    auto pkt_view = req.pkt();
+    std::cout << "Request (id=" << pkt_view.id() << "): " << pkt_view.payload()
+              << std::endl;
+    req.reply("echo " + std::string(pkt_view.payload()));
   };
 
   std::cout << "Listening for 60 sec" << std::endl;
-  a0::RpcServer server("navigate", onrequest, oncancel);
+  a0::RpcServer server("ccc", onrequest, nullptr);
   std::this_thread::sleep_for(std::chrono::seconds(60));
   std::cout << "Done!" << std::endl;
 }

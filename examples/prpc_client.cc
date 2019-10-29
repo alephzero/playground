@@ -1,26 +1,23 @@
 #include <a0.h>
-
-#include <chrono>
 #include <iostream>
-#include <system_error>
-#include <thread>
 
 int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
 
   a0::InitGlobalTopicManager(R"({
-    "container": "bar",
+    "container": "uuu",
     "prpc_client_maps": {
-      "drive_in_circles": {
-        "container": "stuff_doer",
-        "topic": "navigate"
+      "fff": {
+        "container": "vvv",
+        "topic": "eee"
       }
     }
   })");
 
-  a0::PrpcClient client("drive_in_circles");
-  client.connect("Please do!", [](a0::PacketView reply, bool done) {
-    std::cout << "Recieved reply: " << reply.payload() << std::endl;
+  std::cout << "Waiting 1s for responses" << std::endl;
+  a0::PrpcClient client("fff");
+  client.connect("client request", [](a0::PacketView reply_view, bool done) {
+    std::cout << "Recieved reply: " << reply_view.payload() << std::endl;
     if (done) {
       std::cout << "Completed!" << std::endl;
     }

@@ -1,18 +1,14 @@
 #include <a0.h>
-
-#include <chrono>
 #include <iostream>
-#include <system_error>
-#include <thread>
 
 int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
 
   a0::InitGlobalTopicManager(R"({
-    "container": "localizer"
+    "container": "zzz"
   })");
 
-  a0::Publisher p("location");
+  a0::Publisher p("aaa");
 
   for (int i = 0; i < 10; i++) {
     std::string payload = "here (ts=" + std::to_string(i) + ")";

@@ -15,18 +15,18 @@ func check(err error) {
 
 func main() {
 	tm, err := a0.NewTopicManager(`{
-		"container": "bar",
-		"prpc_client_maps": {
-			"drive_in_circles": {
-				"container": "stuff_doer",
-				"topic": "navigate"
-			}
-		}
-	}`)
+  "container": "uuu",
+  "prpc_client_maps": {
+    "fff": {
+      "container": "vvv",
+      "topic": "eee"
+    }
+  }
+}`)
 	check(err)
 	defer tm.Close()
 
-	topic, err := tm.OpenPrpcClientTopic("drive_in_circles")
+	topic, err := tm.OpenPrpcClientTopic("fff")
 	check(err)
 	defer topic.Close()
 
@@ -34,19 +34,21 @@ func main() {
 	check(err)
 	defer client.Close()
 
-	var hdrs []a0.PacketHeader
-	req, err := a0.NewPacket(hdrs, []byte("Please do!"))
+	req, err := a0.NewPacket(nil, []byte("client request"))
 	check(err)
+
+	fmt.Println("Waiting 1s for responses")
 
 	check(client.Connect(req, func(pkt a0.Packet, done bool) {
 		payload, err := pkt.Payload()
 		check(err)
-		fmt.Printf("Recieved pkt: %v\n", string(payload))
-		fmt.Printf("Done: %v\n", done)
+		fmt.Printf("Progress info: %v\n", string(payload))
+		if done {
+			fmt.Println("Completed")
+		}
 	}))
 
 	time.Sleep(time.Second)
 
 	fmt.Println("Done!")
 }
-
