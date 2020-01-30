@@ -4,6 +4,9 @@
 		<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.7.5/css/bulma.min.css" />
 		<script src="//cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
 		<script defer id="ace" src="//cdnjs.cloudflare.com/ajax/libs/ace/1.4.5/ace.js"></script>
+
+		<script src="//unpkg.com/splitpanes"></script>
+		<link href="//unpkg.com/splitpanes/dist/splitpanes.css" rel="stylesheet">	  
 	</head>
 	<body>
 		<div id="app">
@@ -55,22 +58,23 @@
 				</div>
 			</nav>
 
-			<div class="columns is-gapless" style="height: 100%">
-				<div class="column" style="margin: 1px">
+			<splitpanes>
+				<pane style="margin: 1px">
 					<pre id="code" style="height: 100%; font-size: 1.25em;"></pre>
-				</div>
-				<div class="column" style="margin: 1px; overflow: auto;">
+				</pane>
+				<pane style="margin: 1px; overflow: auto;">
 					<div class="has-background-dark" style="height: 100%;">
 						<pre class="has-text-primary has-background-dark" style="font-size: 1em" v-if="code_stdout">{{code_stdout}}</pre>
 						<pre class="has-text-danger has-background-dark" style="font-size: 1em" v-if="code_stderr">{{code_stderr}}</pre>
 					</div>
-				</div>
-			</div>
+				</pane>
+			</splitpanes>
 		</div>
 
 		<script>
 			const vueobj = new Vue({
 				el: '#app',
+				components: window.splitpanes,
 				data: {
 					lang_opts: ['cc', 'go', 'py'],
 					lang_display: {cc: 'C++', go: 'Go', py: 'Python'},
@@ -202,7 +206,6 @@
 							vm.ws.send(JSON.stringify({lang: vm.selected_lang, code: vm.editor.getValue()}))
 						}
 						vm.ws.onmessage = (evt) => {
-							console.log('ws.onmessage', evt)
 							msg = JSON.parse(evt.data)
 							if (msg.stream == 'stdout') {
 								vm.code_stdout += msg.output
