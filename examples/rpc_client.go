@@ -14,17 +14,17 @@ func check(err error) {
 }
 
 func main() {
-	tm, err := a0.NewTopicManager(`{
-  "container": "www",
-  "rpc_client_maps": {
-    "ddd": {
-      "container": "xxx",
-      "topic": "ccc"
-    }
-  }
-}`)
-	check(err)
-	defer tm.Close()
+	tm := a0.TopicManager{
+		Container: "www",
+		SubscriberAliases: map[string]a0.TopicAliasTarget{},
+		RpcClientAliases: map[string]a0.TopicAliasTarget{
+			"ddd": a0.TopicAliasTarget{
+				Container: "xxx",
+				Topic: "ccc",
+			},
+		},
+		PrpcClientAliases: map[string]a0.TopicAliasTarget{},
+	}
 
 	topic, err := tm.OpenRpcClientTopic("ddd")
 	check(err)
@@ -34,15 +34,12 @@ func main() {
 	check(err)
 	defer client.Close()
 
-	req, err := a0.NewPacket(nil, []byte("client msg"))
-	check(err)
+	req := a0.NewPacket(nil, []byte("client msg"))
 
 	fmt.Println("Waiting 1ms for response")
 
 	check(client.Send(req, func(reply a0.Packet) {
-		payload, err := reply.Payload()
-		check(err)
-		fmt.Printf("Recieved reply: %v\n", string(payload))
+		fmt.Printf("Recieved reply: %v\n", string(reply.Payload))
 	}))
 
 	time.Sleep(time.Millisecond)

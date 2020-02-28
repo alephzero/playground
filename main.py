@@ -1,6 +1,7 @@
 import asyncio
 from aiohttp import web, WSMsgType
 import json
+import os
 import tempfile
 
 class Namespace:
@@ -65,12 +66,13 @@ class CodeRunner:
         elif self.cmd['lang'] == 'go':
             self.proc = await asyncio.create_subprocess_exec(
                 'go', 'run', code_file.name,
+                env=dict(GODEBUG='cgocheck=2', **os.environ),
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE)
         elif self.cmd['lang'] == 'cc':
             bin_file = tempfile.NamedTemporaryFile(delete=False)
             self.proc = await asyncio.create_subprocess_exec(
-                'g++', '-std=c++17', '-D_GLIBCXX_USE_CXX11_ABI=0', '-o', bin_file.name, code_file.name, '-lalephzero',
+                'g++', '-std=c++17', '-o', bin_file.name, code_file.name, '-lalephzero',
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE)
             build_result = await self.proc.wait()

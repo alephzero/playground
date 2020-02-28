@@ -2,16 +2,15 @@ import a0
 import json
 import time
 
-a0.InitGlobalTopicManager(
-    json.dumps({
-        'container': 'uuu',
-        'prpc_client_maps': {
-            'fff': {
-                'container': 'vvv',
-                'topic': 'eee'
-            }
-        },
-    }))
+a0.InitGlobalTopicManager(a0.TopicManager(
+    container = 'uuu',
+    prpc_client_aliases = {
+        'fff': a0.TopicAliasTarget(
+            container = 'vvv',
+            topic = 'eee',
+        )
+    }
+))
 
 client = a0.PrpcClient('fff')
 

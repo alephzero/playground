@@ -2,16 +2,15 @@ import a0
 import json
 import time
 
-a0.InitGlobalTopicManager(
-    json.dumps({
-        'container': 'yyy',
-        'subscriber_maps': {
-            'bbb': {
-                'container': 'zzz',
-                'topic': 'aaa'
-            }
-        }
-    }))
+a0.InitGlobalTopicManager(a0.TopicManager(
+    container = 'yyy',
+    subscriber_aliases = {
+        'bbb': a0.TopicAliasTarget(
+            container = 'zzz',
+            topic = 'aaa'
+        )
+    }
+))
 
 
 def callback(pkt_view):

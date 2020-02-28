@@ -2,7 +2,7 @@ import a0
 import json
 import time
 
-a0.InitGlobalTopicManager(json.dumps({'container': 'vvv'}))
+a0.InitGlobalTopicManager(a0.TopicManager(container = 'vvv'))
 
 
 def onconnect(conn):

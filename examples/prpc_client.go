@@ -14,17 +14,17 @@ func check(err error) {
 }
 
 func main() {
-	tm, err := a0.NewTopicManager(`{
-  "container": "uuu",
-  "prpc_client_maps": {
-    "fff": {
-      "container": "vvv",
-      "topic": "eee"
-    }
-  }
-}`)
-	check(err)
-	defer tm.Close()
+	tm := a0.TopicManager{
+		Container: "uuu",
+		SubscriberAliases: map[string]a0.TopicAliasTarget{},
+		RpcClientAliases: map[string]a0.TopicAliasTarget{},
+		PrpcClientAliases: map[string]a0.TopicAliasTarget{
+			"fff": a0.TopicAliasTarget{
+				Container: "vvv",
+				Topic: "eee",
+			},
+		},
+	}
 
 	topic, err := tm.OpenPrpcClientTopic("fff")
 	check(err)
@@ -34,15 +34,12 @@ func main() {
 	check(err)
 	defer client.Close()
 
-	req, err := a0.NewPacket(nil, []byte("client request"))
-	check(err)
+	req := a0.NewPacket(nil, []byte("client request"))
 
 	fmt.Println("Waiting 1s for responses")
 
 	check(client.Connect(req, func(pkt a0.Packet, done bool) {
-		payload, err := pkt.Payload()
-		check(err)
-		fmt.Printf("Progress info: %v\n", string(payload))
+		fmt.Printf("Progress info: %v\n", string(pkt.Payload))
 		if done {
 			fmt.Println("Completed")
 		}

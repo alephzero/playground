@@ -14,11 +14,9 @@ func check(err error) {
 }
 
 func main() {
-	tm, err := a0.NewTopicManager(`{
-  "container": "zzz"
-}`)
-	check(err)
-	defer tm.Close()
+	tm := a0.TopicManager{
+		Container: "zzz",
+	}
 
 	topic, err := tm.OpenPublisherTopic("aaa")
 	check(err)
@@ -31,8 +29,7 @@ func main() {
 	for i := 0; i < 10; i++ {
 		payload := fmt.Sprintf("here (ts=%v)", i)
 		fmt.Printf("publishing: %v\n", payload)
-		pkt, err := a0.NewPacket(nil, []byte(payload))
-		check(err)
+		pkt := a0.NewPacket(nil, []byte(payload))
 		check(pub.Pub(pkt))
 		time.Sleep(time.Second)
 	}

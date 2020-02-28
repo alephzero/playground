@@ -4,15 +4,17 @@
 int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
 
-  a0::InitGlobalTopicManager(R"({
-    "container": "yyy",
-    "subscriber_maps": {
-      "bbb": {
-        "container": "zzz",
-        "topic": "aaa"
-      }
-    }
-  })");
+  a0::InitGlobalTopicManager({
+      .container = "yyy",
+      .subscriber_aliases = {
+        {"bbb", {
+          .container = "zzz",
+          .topic = "aaa",
+        }}
+      },
+      .rpc_client_aliases = {},
+      .prpc_client_aliases = {},
+  });
 
   std::cout << "Listening for 60 sec" << std::endl;
 

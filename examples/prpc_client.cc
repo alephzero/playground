@@ -4,15 +4,17 @@
 int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
 
-  a0::InitGlobalTopicManager(R"({
-    "container": "uuu",
-    "prpc_client_maps": {
-      "fff": {
-        "container": "vvv",
-        "topic": "eee"
-      }
-    }
-  })");
+  a0::InitGlobalTopicManager({
+      .container = "uuu",
+      .subscriber_aliases = {},
+      .rpc_client_aliases = {},
+      .prpc_client_aliases = {
+        {"fff", {
+          .container = "vvv",
+          .topic = "eee",
+        }}
+      },
+  });
 
   std::cout << "Waiting 1s for responses" << std::endl;
   a0::PrpcClient client("fff");

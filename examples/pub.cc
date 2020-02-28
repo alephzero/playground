@@ -4,9 +4,12 @@
 int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
 
-  a0::InitGlobalTopicManager(R"({
-    "container": "zzz"
-  })");
+  a0::InitGlobalTopicManager({
+      .container = "zzz",
+      .subscriber_aliases = {},
+      .rpc_client_aliases = {},
+      .prpc_client_aliases = {},
+  });
 
   a0::Publisher p("aaa");
 

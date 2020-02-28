@@ -4,15 +4,17 @@
 int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
 
-  a0::InitGlobalTopicManager(R"({
-    "container": "www",
-    "rpc_client_maps": {
-      "ddd": {
-        "container": "xxx",
-        "topic": "ccc"
-      }
-    }
-  })");
+  a0::InitGlobalTopicManager({
+      .container = "www",
+      .subscriber_aliases = {},
+      .rpc_client_aliases = {
+        {"ddd", {
+          .container = "xxx",
+          .topic = "ccc",
+        }}
+      },
+      .prpc_client_aliases = {},
+  });
 
   // // Callback version:
   // a0::RpcClient client("ddd");

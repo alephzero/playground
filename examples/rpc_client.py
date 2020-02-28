@@ -2,16 +2,15 @@ import a0
 import json
 import time
 
-a0.InitGlobalTopicManager(
-    json.dumps({
-        'container': 'www',
-        'rpc_client_maps': {
-            'ddd': {
-                'container': 'xxx',
-                'topic': 'ccc'
-            }
-        },
-    }))
+a0.InitGlobalTopicManager(a0.TopicManager(
+    container = 'www',
+    rpc_client_aliases = {
+        'ddd': a0.TopicAliasTarget(
+            container = 'xxx',
+            topic = 'ccc',
+        )
+    }
+))
 
 client = a0.RpcClient('ddd')
 

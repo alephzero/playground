@@ -4,9 +4,12 @@
 int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
 
-  a0::InitGlobalTopicManager(R"({
-    "container": "vvv"
-  })");
+  a0::InitGlobalTopicManager({
+      .container = "vvv",
+      .subscriber_aliases = {},
+      .rpc_client_aliases = {},
+      .prpc_client_aliases = {},
+  });
 
   auto onconnect = [&](a0::PrpcConnection conn) {
     auto pkt_view = conn.pkt();

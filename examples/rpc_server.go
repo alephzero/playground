@@ -14,25 +14,19 @@ func check(err error) {
 }
 
 func main() {
-	tm, err := a0.NewTopicManager(`{
-  "container": "xxx"
-}`)
-	check(err)
-	defer tm.Close()
+	tm := a0.TopicManager{
+		Container: "xxx",
+	}
 
 	topic, err := tm.OpenRpcServerTopic("ccc")
 	check(err)
 	defer topic.Close()
 
 	onrequest := func(req a0.RpcRequest) {
-		payload, err := req.Packet().Payload()
-		check(err)
-		id, err := req.Packet().Id()
-		check(err)
-		fmt.Printf("Request (id=%v): %v\n", id, string(payload))
+		pkt := req.Packet()
+		fmt.Printf("Request (id=%v): %v\n", pkt.ID(), string(pkt.Payload))
 
-		replyPkt, err := a0.NewPacket(nil, []byte(fmt.Sprintf("echo %v", string(payload))))
-		check(err)
+		replyPkt := a0.NewPacket(nil, []byte(fmt.Sprintf("echo %v", string(pkt.Payload))))
 		check(req.Reply(replyPkt))
 	}
 

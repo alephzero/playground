@@ -14,17 +14,17 @@ func check(err error) {
 }
 
 func main() {
-	tm, err := a0.NewTopicManager(`{
-  "container": "yyy",
-  "subscriber_maps": {
-    "bbb": {
-      "container": "zzz",
-      "topic": "aaa"
-    }
-  }
-}`)
-	check(err)
-	defer tm.Close()
+	tm := a0.TopicManager{
+		Container: "yyy",
+		SubscriberAliases: map[string]a0.TopicAliasTarget{
+			"bbb": a0.TopicAliasTarget{
+				Container: "zzz",
+				Topic: "aaa",
+			},
+		},
+		RpcClientAliases: map[string]a0.TopicAliasTarget{},
+		PrpcClientAliases: map[string]a0.TopicAliasTarget{},
+	}
 
 	topic, err := tm.OpenSubscriberTopic("bbb")
 	check(err)
@@ -33,9 +33,7 @@ func main() {
 	fmt.Println("Listening for 60 sec")
 
 	sub, err := a0.NewSubscriber(topic, a0.INIT_AWAIT_NEW, a0.ITER_NEWEST, func(pkt a0.Packet) {
-		payload, err := pkt.Payload()
-		check(err)
-		fmt.Printf("Got: %v\n", string(payload))
+		fmt.Printf("Got: %v\n", string(pkt.Payload))
 	})
 	check(err)
 	defer sub.Close()

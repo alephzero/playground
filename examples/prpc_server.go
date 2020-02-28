@@ -14,31 +14,24 @@ func check(err error) {
 }
 
 func main() {
-	tm, err := a0.NewTopicManager(`{
-  "container": "vvv"
-}`)
-	check(err)
-	defer tm.Close()
+	tm := a0.TopicManager{
+		Container: "vvv",
+	}
 
 	topic, err := tm.OpenPrpcServerTopic("eee")
 	check(err)
 	defer topic.Close()
 
 	onconnect := func(conn a0.PrpcConnection) {
-		payload, err := conn.Packet().Payload()
-		check(err)
-		id, err := conn.Packet().Id()
-		check(err)
-		fmt.Printf("Connection (id=%v): %v\n", id, string(payload))
+		pkt := conn.Packet()
+		fmt.Printf("Connection (id=%v): %v\n", pkt.ID(), string(pkt.Payload))
 
 		for i := 0; i < 3; i++ {
-			pkt, err := a0.NewPacket(nil, []byte(fmt.Sprintf("msg %v", i)))
-			check(err)
+			pkt = a0.NewPacket(nil, []byte(fmt.Sprintf("msg %v", i)))
 			check(conn.Send(pkt, false))
 		}
 
-		pkt, err := a0.NewPacket(nil, []byte("final msg"))
-		check(err)
+		pkt = a0.NewPacket(nil, []byte("final msg"))
 		check(conn.Send(pkt, true))
 	}
 

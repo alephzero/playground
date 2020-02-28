@@ -2,7 +2,7 @@ import a0
 import json
 import time
 
-a0.InitGlobalTopicManager(json.dumps({'container': 'zzz'}))
+a0.InitGlobalTopicManager(a0.TopicManager(container = 'zzz'))
 
 p = a0.Publisher('aaa')
 for i in range(10):
