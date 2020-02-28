@@ -17,13 +17,11 @@ func main() {
 	tm := a0.TopicManager{
 		Container: "yyy",
 		SubscriberAliases: map[string]a0.TopicAliasTarget{
-			"bbb": a0.TopicAliasTarget{
+			"bbb": {
 				Container: "zzz",
 				Topic: "aaa",
 			},
 		},
-		RpcClientAliases: map[string]a0.TopicAliasTarget{},
-		PrpcClientAliases: map[string]a0.TopicAliasTarget{},
 	}
 
 	topic, err := tm.OpenSubscriberTopic("bbb")

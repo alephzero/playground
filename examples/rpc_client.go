@@ -16,14 +16,12 @@ func check(err error) {
 func main() {
 	tm := a0.TopicManager{
 		Container: "www",
-		SubscriberAliases: map[string]a0.TopicAliasTarget{},
 		RpcClientAliases: map[string]a0.TopicAliasTarget{
-			"ddd": a0.TopicAliasTarget{
+			"ddd": {
 				Container: "xxx",
 				Topic: "ccc",
 			},
 		},
-		PrpcClientAliases: map[string]a0.TopicAliasTarget{},
 	}
 
 	topic, err := tm.OpenRpcClientTopic("ddd")
