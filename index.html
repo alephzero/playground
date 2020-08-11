@@ -6,13 +6,7 @@
 		<script defer id="ace" src="//cdnjs.cloudflare.com/ajax/libs/ace/1.4.5/ace.js"></script>
 
 		<script src="//unpkg.com/splitpanes"></script>
-		<link href="//unpkg.com/splitpanes/dist/splitpanes.css" rel="stylesheet">
-
-		<script>
-			TogetherJSConfig_hubBase = "https://togetherjs-hub.glitch.me/";
-			TogetherJSConfig_cloneClicks = true;
-		</script>
-		<script src="https://togetherjs.com/togetherjs-min.js"></script>
+		<link href="//unpkg.com/splitpanes/dist/splitpanes.css" rel="stylesheet">	  
 	</head>
 	<body>
 		<div id="app">
@@ -57,9 +51,6 @@
 								</a>
 							</div>
 						</div>
-						<a class="navbar-item" onclick="TogetherJS(this); return false;">
-							Colab
-						</a>
 					</div>
 					<div class="navbar-end">
 						<div class="tag is-dark">Ctrl + ENTER to Run</div>
@@ -73,8 +64,8 @@
 				</pane>
 				<pane style="margin: 1px; overflow: auto;">
 					<div class="has-background-dark" style="height: 100%;">
-						<pre class="has-text-primary has-background-dark" style="font-size: 1em" v-if="output_stdout">{{output_stdout}}</pre>
-						<pre class="has-text-danger has-background-dark" style="font-size: 1em" v-if="output_stderr">{{output_stderr}}</pre>
+						<pre class="has-text-primary has-background-dark" style="font-size: 1em" v-if="code_stdout">{{code_stdout}}</pre>
+						<pre class="has-text-danger has-background-dark" style="font-size: 1em" v-if="code_stderr">{{code_stderr}}</pre>
 					</div>
 				</pane>
 			</splitpanes>
@@ -172,8 +163,8 @@
 						},
 					],
 					editor: undefined,
-					output_stdout: '',
-					output_stderr: '',
+					code_stdout: '',
+					code_stderr: '',
 					ws: undefined,
 				},
 				mounted() {
@@ -208,13 +199,6 @@
 							bindKey: {win: 'Ctrl-Enter',  mac: 'Command-Enter'},
 							exec: vm.run_code,
 						})
-
-						TogetherJS.hub.on('clear_output', (msg) => {
-							vm.local_clear_output()
-						})
-						TogetherJS.hub.on('append_output', (msg) => {
-							vm.local_append_output(msg)
-						})
 					},
 					run_code() {
 						const vm = this
@@ -222,7 +206,8 @@
 						if (vm.ws) {
 							vm.ws.close()
 						}
-						vm.clear_output()
+						vm.code_stdout = ''
+						vm.code_stderr = ''
 
 						vm.ws = new WebSocket(`ws://${location.host}/api/run`)
 						vm.ws.onopen = () => {
@@ -230,7 +215,12 @@
 						}
 						vm.ws.onmessage = (evt) => {
 							msg = JSON.parse(evt.data)
-							vm.append_output(msg)
+							if (msg.stream == 'stdout') {
+								vm.code_stdout += msg.output
+							}
+							if (msg.stream == 'stderr') {
+								vm.code_stderr += msg.output
+							}
 						}
 					},
 					select_lang(lang) {
@@ -250,36 +240,13 @@
 						if (vm.ws) {
 							vm.ws.close()
 						}
-						vm.clear_output()
+						vm.code_stdout = ''
+						vm.code_stderr = ''
 
 						vm.select_lang(example.lang)
 						fetch(example.path)
 						.then((r) => { return r.text() })
 						.then((code) => { vm.editor.setValue(code, 1) })
-					},
-					local_clear_output() {
-						const vm = this
-						vm.output_stdout = ''
-						vm.output_stderr = ''
-					},
-					clear_output() {
-						const vm = this
-						vm.local_clear_output()
-						TogetherJS.send({type: 'clear_output'})
-					},
-					local_append_output(msg) {
-						const vm = this
-						if (msg.stream == 'stdout') {
-							vm.output_stdout += msg.output
-						}
-						if (msg.stream == 'stderr') {
-							vm.output_stderr += msg.output
-						}
-					},
-					append_output(msg) {
-						const vm = this
-						vm.local_append_output(msg)
-						TogetherJS.send({type: 'append_output', ...msg})
 					}
 				}
 			})
