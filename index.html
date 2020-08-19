@@ -128,12 +128,11 @@
 		}
 
 		function createCookie(name, value, days) {
+			let expires = "";
 		    if (days) {
 		        let date = new Date();
 		        date.setTime(date.getTime() + (days * 24 * 60 * 60 *1000));
-		        let expires = "; expires=" + date.toGMTString();
-		    } else {
-		        let expires = "";
+		        expires = "; expires=" + date.toGMTString();
 		    }
 		    document.cookie = name + "=" + value + expires + "; path=/";
 		}
@@ -346,6 +345,7 @@
 
 				select_cookie(cookie) {
 					const vm = this
+					document.title = cookie.script_name
 					vm.select_lang(cookie.lang)
 					vm.editor.setValue(cookie.code, 1)
 					vm.script_name = cookie.script_name
