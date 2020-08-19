@@ -54,11 +54,50 @@
 							</a>
 						</div>
 					</div>
+
+					<!-- Load Dropdown -->
+					<div class="navbar-item has-dropdown is-hoverable">
+						<a class="navbar-link">
+							Load Saved Script
+						</a>
+						<div class="navbar-dropdown">
+							
+							<template v-if="!(cookies[0] === null)">
+								<a class="navbar-item"  v-for="cookie in cookies" @click="select_cookie(cookie)">
+									{{cookie.display}}
+								</a>
+							</template>
+
+						</div>
+					</div>
+
+
+					<!-- Delete Dropdown -->
+					<div class="navbar-item has-dropdown is-hoverable">
+						<a class="navbar-link">
+							Delete Saved Script
+						</a>
+						<div class="navbar-dropdown">
+							
+							<template v-if="!(cookies[0] === null)">
+								<a class="navbar-item"  v-for="cookie in cookies" @click="delete_cookie(cookie)">
+									{{cookie.display}}
+								</a>
+							</template>
+
+						</div>
+					</div>
+
+
+				</div>
+
+
 				</div>
 				<div class="navbar-end">
-					<div class="tag is-dark">Ctrl + ENTER to Run</div>
+					<div class="tag is-dark">Ctrl + ENTER to Run, Ctrl + S to Save</div>
 				</div>
-			</div>
+
+
 		</nav>
 
 		<splitpanes>
@@ -77,6 +116,47 @@
 	</div>
 
 	<script>
+
+		function getAllCookies(){
+		  let pairs = document.cookie.split(";");
+		  let cookies = {};
+		  for (let i=0; i<pairs.length; i++){
+		    let pair = pairs[i].split("=");
+		    cookies[(pair[0]+'').trim()] = unescape(pair.slice(1).join('='));
+		  }
+		  return cookies;
+		}
+
+		function createCookie(name, value, days) {
+		    if (days) {
+		        let date = new Date();
+		        date.setTime(date.getTime() + (days * 24 * 60 * 60 *1000));
+		        let expires = "; expires=" + date.toGMTString();
+		    } else {
+		        let expires = "";
+		    }
+		    document.cookie = name + "=" + value + expires + "; path=/";
+		}
+
+		function readCookie(name) {
+		    let nameEQ = name + "=";
+		    let ca = document.cookie.split(';');
+		    for(let i=0;i < ca.length;i++) {
+		        let c = ca[i];
+		        while (c.charAt(0)==' ') {
+		            c = c.substring(1,c.length);
+		        }
+		        if (c.indexOf(nameEQ) == 0) {
+		            return c.substring(nameEQ.length,c.length);
+		        }
+		    }
+		    return null;
+		}
+
+		function eraseCookie(name) {
+		    createCookie(name,"",-1);
+		}
+
 		const vueobj = new Vue({
 			el: '#app',
 			components: window.splitpanes,
@@ -171,12 +251,24 @@
 				output_stdout: '',
 				output_stderr: '',
 				ws: undefined,
+
+				// Cookie Variables
+				script_name: undefined, // name of the current scripts, might be nice to have down the line
+				cookies: []
 			},
 			mounted() {
 				const vm = this
 				const ace_script = document.querySelector('#ace')
 				ace_script.onload = vm.setup_code_panel
+
+				// Load cookies from browser, save to vuedata
+				const all_cookie_names = getAllCookies()
+				for (cookie_name in all_cookie_names) {
+				  cookie = JSON.parse(readCookie(cookie_name))
+				  vm.cookies.push(cookie)
+				}
 			},
+
 			computed: {
 				examples_cc() {
 					return this.examples.filter(ex => ex.lang == 'cc')
@@ -189,6 +281,8 @@
 				},
 			},
 			methods: {
+
+
 				setup_code_panel() {
 					const vm = this
 					vm.editor = ace.edit('code')
@@ -204,7 +298,73 @@
 						bindKey: { win: 'Ctrl-Enter', mac: 'Command-Enter' },
 						exec: vm.run_code,
 					})
+
+					// Control-S -> Save file
+					vm.editor.commands.addCommand({
+						name: 'save_code',
+						bindKey: { win: 'Ctrl-S', mac: 'Command-S' },
+						exec: vm.save_code,
+					})
 				},
+
+				save_code() {
+					const vm = this
+
+					// Get script name
+					let script_name = prompt("Enter script name:")
+
+					// If user hits the cancel button
+					if (script_name == null){
+						return
+					}
+
+					// User submits blank text
+					if (script_name.length == 0){
+						alert("Script name can't be empty");
+						return
+					} 
+
+					// Save Vue script name data with prompt input. might be useful
+					vm.script_name = script_name
+					document.title = script_name
+
+					cookie = {
+						lang: vm.selected_lang, 
+						script_name: script_name, 
+						display: script_name,
+						code: vm.editor.getValue()}
+					cookie_str = JSON.stringify(cookie)
+
+					console.log("Saving cookie:", cookie_str)
+
+					// Save cookie to browser
+					createCookie(script_name, cookie_str, 2*420)  // save cookie to browser
+
+					// Save cookie to Vue
+					vm.cookies.push(cookie)
+				},
+
+				select_cookie(cookie) {
+					const vm = this
+					vm.select_lang(cookie.lang)
+					vm.editor.setValue(cookie.code, 1)
+					vm.script_name = cookie.script_name
+				},
+
+				delete_cookie(cookie) {
+
+					const vm = this
+					
+					// Remove cookie from browser
+					eraseCookie(cookie.script_name)
+
+					// Remove from vue data
+					cookie_idx = vm.cookies.indexOf(cookie)
+					vm.cookies.splice(cookie_idx, 1);
+
+					alert(`Cookie: '${cookie.script_name}' deleted`)
+				},
+
 				run_code() {
 					const vm = this
 
@@ -228,6 +388,7 @@
 						}
 					}
 				},
+
 				select_lang(lang) {
 					const vm = this
 					vm.selected_lang = lang
@@ -239,6 +400,7 @@
 						}[lang])
 					}
 				},
+
 				select_example(example) {
 					const vm = this
 
