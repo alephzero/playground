@@ -72,7 +72,7 @@
 					</div>
 
 
-					<!-- Load Dropdown -->
+					<!-- Delete Dropdown -->
 					<div class="navbar-item has-dropdown is-hoverable">
 						<a class="navbar-link">
 							Delete Saved Script
@@ -94,16 +94,10 @@
 
 				</div>
 				<div class="navbar-end">
-
-<!-- 					<table>
-						<tr><div class="tag is-dark">Ctrl + ENTER to Run</div></tr>
-						<tr>	<div class="tag is-dark">Ctrl + S to Save </div></tr>
-					</table> -->
 					<div class="tag is-dark">Ctrl + ENTER to Run, Ctrl + S to Save</div>
 				</div>
 
-				<!-- </div> -->
-			<!-- </div> -->
+
 		</nav>
 
 		<splitpanes>
@@ -124,10 +118,10 @@
 	<script>
 
 		function getAllCookies(){
-		  var pairs = document.cookie.split(";");
-		  var cookies = {};
-		  for (var i=0; i<pairs.length; i++){
-		    var pair = pairs[i].split("=");
+		  let pairs = document.cookie.split(";");
+		  let cookies = {};
+		  for (let i=0; i<pairs.length; i++){
+		    let pair = pairs[i].split("=");
 		    cookies[(pair[0]+'').trim()] = unescape(pair.slice(1).join('='));
 		  }
 		  return cookies;
@@ -135,20 +129,20 @@
 
 		function createCookie(name, value, days) {
 		    if (days) {
-		        var date = new Date();
+		        let date = new Date();
 		        date.setTime(date.getTime() + (days * 24 * 60 * 60 *1000));
-		        var expires = "; expires=" + date.toGMTString();
+		        let expires = "; expires=" + date.toGMTString();
 		    } else {
-		        var expires = "";
+		        let expires = "";
 		    }
 		    document.cookie = name + "=" + value + expires + "; path=/";
 		}
 
 		function readCookie(name) {
-		    var nameEQ = name + "=";
-		    var ca = document.cookie.split(';');
-		    for(var i=0;i < ca.length;i++) {
-		        var c = ca[i];
+		    let nameEQ = name + "=";
+		    let ca = document.cookie.split(';');
+		    for(let i=0;i < ca.length;i++) {
+		        let c = ca[i];
 		        while (c.charAt(0)==' ') {
 		            c = c.substring(1,c.length);
 		        }
@@ -268,7 +262,7 @@
 				ace_script.onload = vm.setup_code_panel
 
 				// Load cookies from browser, save to vuedata
-				all_cookie_names = getAllCookies()
+				const all_cookie_names = getAllCookies()
 				for (cookie_name in all_cookie_names) {
 				  cookie = JSON.parse(readCookie(cookie_name))
 				  vm.cookies.push(cookie)
@@ -308,7 +302,7 @@
 					// Control-S -> Save file
 					vm.editor.commands.addCommand({
 						name: 'save_code',
-						bindKey: { win: 'Ctrl-S', mac: 'Ctrl-S' },
+						bindKey: { win: 'Ctrl-S', mac: 'Command-S' },
 						exec: vm.save_code,
 					})
 				},
@@ -317,39 +311,37 @@
 					const vm = this
 
 					// Get script name
-					var script_name = prompt("Enter script name:")
+					let script_name = prompt("Enter script name:")
 
 					// If user hits the cancel button
 					if (script_name == null){
 						return
 					}
 
-					if (script_name.length > 0){
-	
-						// Save Vue script name data with prompt input. might be useful
-						vm.script_name = script_name
-						document.title = script_name
+					// User submits blank text
+					if (script_name.length == 0){
+						alert("Script name can't be empty");
+						return
+					} 
 
-						cookie = {
-							lang: vm.selected_lang, 
-							script_name: script_name, 
-							display: script_name,
-							code: vm.editor.getValue()}
-						cookie_str = JSON.stringify(cookie)
+					// Save Vue script name data with prompt input. might be useful
+					vm.script_name = script_name
+					document.title = script_name
 
-						console.log("Saving cookie:", cookie_str)
+					cookie = {
+						lang: vm.selected_lang, 
+						script_name: script_name, 
+						display: script_name,
+						code: vm.editor.getValue()}
+					cookie_str = JSON.stringify(cookie)
 
-						// Save cookie to browser
-						createCookie(script_name, cookie_str, 2*420)  // save cookie to browser
+					console.log("Saving cookie:", cookie_str)
 
-						// Save cookie to Vue
-						this.cookies.push(cookie)
+					// Save cookie to browser
+					createCookie(script_name, cookie_str, 2*420)  // save cookie to browser
 
-					} else{
-						alert("Script name can't be empty")
-					}
-
-
+					// Save cookie to Vue
+					vm.cookies.push(cookie)
 				},
 
 				select_cookie(cookie) {
@@ -360,15 +352,17 @@
 				},
 
 				delete_cookie(cookie) {
+
+					const vm = this
 					
 					// Remove cookie from browser
 					eraseCookie(cookie.script_name)
 
 					// Remove from vue data
-					cookie_idx = this.cookies.indexOf(cookie)
-					this.cookies.splice(cookie_idx, 1);
+					cookie_idx = vm.cookies.indexOf(cookie)
+					vm.cookies.splice(cookie_idx, 1);
 
-					alert("Cookie: '"+cookie.script_name+"' deleted")
+					alert(`Cookie: '${cookie.script_name}' deleted`)
 				},
 
 				run_code() {
