@@ -61,12 +61,13 @@
 							Saved Script
 						</a>
 						<div class="navbar-dropdown">
-							<a class="navbar-item field" v-for="cookie in cookies" @click="select_cookie(cookie)">
+							<a class="navbar-item field" v-for="snippet in snippets" @click="load_snippet(snippet)">
 								<span style="width: 100%">
-									{{cookie.display}}
+									{{snippet}}
 								</span>
 								<span class="icon">
-									<i class="fas fa-lg fa-times-circle has-text-danger" @click="delete_cookie(cookie)"></i>
+									<i class="fas fa-lg fa-times-circle has-text-danger"
+										@click.stop="delete_snippet(snippet)"></i>
 								</span>
 							</a>
 						</div>
@@ -97,46 +98,6 @@
 	</div>
 
 	<script>
-
-		function getAllCookies() {
-			const pairs = document.cookie.split(";");
-			let cookies = {};
-			for (let i = 0; i < pairs.length; i++) {
-				let pair = pairs[i].split("=");
-				cookies[(pair[0] + '').trim()] = unescape(pair.slice(1).join('='));
-			}
-			return cookies;
-		}
-
-		function createCookie(name, value, days) {
-			let expires = "";
-			if (days) {
-				let date = new Date();
-				date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-				expires = "; expires=" + date.toGMTString();
-			}
-			document.cookie = name + "=" + value + expires + "; path=/";
-		}
-
-		function readCookie(name) {
-			const nameEQ = name + "=";
-			const ca = document.cookie.split(';');
-			for (let i = 0; i < ca.length; i++) {
-				let c = ca[i];
-				while (c.charAt(0) == ' ') {
-					c = c.substring(1, c.length);
-				}
-				if (c.indexOf(nameEQ) == 0) {
-					return c.substring(nameEQ.length, c.length);
-				}
-			}
-			return null;
-		}
-
-		function eraseCookie(name) {
-			createCookie(name, "", -1);
-		}
-
 		const vueobj = new Vue({
 			el: '#app',
 			components: window.splitpanes,
@@ -231,22 +192,14 @@
 				output_stdout: '',
 				output_stderr: '',
 				ws: undefined,
-
-				// Cookie Variables
-				script_name: undefined, // name of the current scripts, might be nice to have down the line
-				cookies: []
+				snippets: [],
 			},
+
 			mounted() {
 				const vm = this
 				const ace_script = document.querySelector('#ace')
 				ace_script.onload = vm.setup_code_panel
-
-				// Load cookies from browser, save to vuedata
-				const all_cookie_names = getAllCookies()
-				for (cookie_name in all_cookie_names) {
-					cookie = JSON.parse(readCookie(cookie_name))
-					vm.cookies.push(cookie)
-				}
+				vm.detect_snippets()
 			},
 
 			computed: {
@@ -278,66 +231,68 @@
 						exec: vm.run_code,
 					})
 
-					// Control-S -> Save file
 					vm.editor.commands.addCommand({
-						name: 'save_code',
+						name: 'save_snippet',
 						bindKey: { win: 'Ctrl-S', mac: 'Command-S' },
-						exec: vm.save_code,
+						exec: vm.save_snippet,
 					})
 				},
 
-				save_code() {
+				detect_snippets() {
+					const vm = this
+					vm.snippets = Object.keys(localStorage)
+						.filter(name => { return name.startsWith('a0_playground__') })
+						.map(name => { return name.substr('a0_playground__'.length) })
+						.sort()
+				},
+
+				save_snippet() {
 					const vm = this
 
-					// Get script name
-					let script_name = prompt("Enter script name:")
+					// Get snippet name.
+					let snippet_name = prompt("Enter snippet name:")
 
-					// If user hits the cancel button
-					if (script_name == null) {
+					// Check if the user canceled.
+					if (snippet_name == null) {
 						return
 					}
 
-					// User submits blank text
-					if (script_name.length == 0) {
+					// Check if the user submitted an empty string.
+					snippet_name = snippet_name.trim()
+					if (snippet_name.length == 0) {
 						alert("Script name can't be empty");
 						return
 					}
 
-					// Save Vue script name data with prompt input. might be useful
-					vm.script_name = script_name
-					document.title = script_name
+					// TODO(lshamis): Verify there is no conflict with an existing snippet.
 
-					const cookie = {
+					localStorage.setItem(`a0_playground__${snippet_name}`, JSON.stringify({
 						lang: vm.selected_lang,
-						script_name: script_name,
-						display: script_name,
 						code: vm.editor.getValue()
+					}))
+
+					vm.detect_snippets()
+				},
+
+				load_snippet(snippet_name) {
+					const vm = this
+
+					if (vm.ws) {
+						vm.ws.close()
 					}
-					const cookie_str = JSON.stringify(cookie)
+					vm.output_stdout = ''
+					vm.output_stderr = ''
 
-					// Save cookie to browser
-					createCookie(script_name, cookie_str, 2 * 420)  // save cookie to browser
-
-					// Save cookie to Vue
-					vm.cookies.push(cookie)
+					const snippet = JSON.parse(localStorage.getItem(`a0_playground__${snippet_name}`))
+					vm.select_lang(snippet.lang)
+					vm.editor.setValue(snippet.code, 1)
 				},
 
-				select_cookie(cookie) {
+				delete_snippet(snippet_name) {
 					const vm = this
-					vm.select_lang(cookie.lang)
-					vm.editor.setValue(cookie.code, 1)
-					vm.script_name = cookie.script_name
-				},
+					localStorage.removeItem(`a0_playground__${snippet_name}`)
 
-				delete_cookie(cookie) {
-					const vm = this
-
-					// Remove cookie from browser.
-					eraseCookie(cookie.script_name)
-
-					// Remove from vue data.
-					const cookie_idx = vm.cookies.indexOf(cookie)
-					vm.cookies.splice(cookie_idx, 1)
+					vm.detect_snippets()
 				},
 
 				run_code() {
@@ -351,7 +306,10 @@
 
 					vm.ws = new WebSocket(`ws://${location.host}/api/run`)
 					vm.ws.onopen = () => {
-						vm.ws.send(JSON.stringify({ lang: vm.selected_lang, code: vm.editor.getValue() }))
+						vm.ws.send(JSON.stringify({
+							lang: vm.selected_lang,
+							code: vm.editor.getValue()
+						}))
 					}
 					vm.ws.onmessage = (evt) => {
 						msg = JSON.parse(evt.data)
