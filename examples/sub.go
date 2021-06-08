@@ -14,17 +14,7 @@ func check(err error) {
 }
 
 func main() {
-	tm := a0.TopicManager{
-		Container: "yyy",
-		SubscriberAliases: map[string]a0.TopicAliasTarget{
-			"bbb": {
-				Container: "zzz",
-				Topic: "aaa",
-			},
-		},
-	}
-
-	topic, err := tm.OpenSubscriberTopic("bbb")
+	topic, err := a0.FileOpen("alephzero/example.pubsub.a0", nil)
 	check(err)
 	defer topic.Close()
 

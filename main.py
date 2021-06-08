@@ -1,30 +1,60 @@
 import asyncio
 from aiohttp import web, WSMsgType
+import collections
+import hashlib
 import json
 import os
+import sys
 import tempfile
 
-class Namespace:
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
 
-    def __repr__(self):
-        keys = sorted(self.__dict__)
-        items = ("{}={!r}".format(k, self.__dict__[k]) for k in keys)
-        return "{}({})".format(type(self).__name__, ", ".join(items))
+def hash_directory(directory):
+    hash_builder = hashlib.md5()
 
-    def __eq__(self, other):
-        return self.__dict__ == other.__dict__
+    for root, dirs, files in os.walk(directory):
+        for filename in files:
+            filepath = os.path.join(root, filename)
+            hash_builder.update(filepath.encode('utf-8'))
+            file_hash = hashlib.md5(open(filepath, 'rb').read()).digest()
+            hash_builder.update(file_hash)
 
-    def __getattr__(self, name):
-        return self.__dict__.get(name, None)
+    return hash_builder.hexdigest()
 
-global_ns = Namespace()
 
 async def root_handler(request):
     return web.FileResponse('/index.html')
 
+
+class AlephZeroLibraryBuilder:
+    dir_hashes = collections.defaultdict(str)
+
+    @staticmethod
+    async def rebuild():
+        cc_hash = hash_directory('/alephzero/alephzero')
+
+        if cc_hash != AlephZeroLibraryBuilder.dir_hashes['cc_code']:
+            print('Rebuilding C++ Code...', file=sys.stderr)
+            proc = await asyncio.create_subprocess_exec(
+                'make', '-j', 'install', cwd='/alephzero/alephzero')
+            await proc.wait()
+            AlephZeroLibraryBuilder.dir_hashes['cc_code'] = cc_hash
+
+        py_hash = hash_directory('/alephzero/py')
+
+        if py_hash != AlephZeroLibraryBuilder.dir_hashes['py_code']:
+            print('Rebuilding Python Code...', file=sys.stderr)
+            proc = await asyncio.create_subprocess_exec('python3',
+                                                        '-m',
+                                                        'pip',
+                                                        'install',
+                                                        '.',
+                                                        cwd='/alephzero/py')
+            await proc.wait()
+            AlephZeroLibraryBuilder.dir_hashes['py_code'] = py_hash
+
+
 class CodeRunner:
+
     def __init__(self, cmd, ws_out):
         self.cmd = cmd
         self.ws_out = ws_out
@@ -35,44 +65,37 @@ class CodeRunner:
         if self.dead:
             return
 
-        code_file = tempfile.NamedTemporaryFile(suffix='.' + self.cmd['lang'], delete=False)
+        code_file = tempfile.NamedTemporaryFile(suffix='.' + self.cmd['lang'],
+                                                delete=False)
         with open(code_file.name, 'w') as fd:
             fd.write(self.cmd['code'])
 
-        proc = await asyncio.create_subprocess_exec(
-            'make', '-j', 'install',
-            cwd='/alephzero/alephzero')
-        await proc.wait()
+        await AlephZeroLibraryBuilder.rebuild()
 
         if self.cmd['lang'] == 'py':
-            py_requirements = open('/alephzero/py/requirements.txt', 'rb').read()
-            if global_ns.py_requirements != py_requirements:
-                # TODO: Forward stderr.
-                proc = await asyncio.create_subprocess_exec(
-                    'pip3', 'install', '-r', 'requirements.txt',
-                    cwd='/alephzero/py')
-                await proc.wait()
-            global_ns.py_requirements = py_requirements
-
-            proc = await asyncio.create_subprocess_exec(
-                'python3', 'setup.py', 'install',
-                cwd='/alephzero/py')
-            await proc.wait()
-
             self.proc = await asyncio.create_subprocess_exec(
-                'python3', '-u', code_file.name,
+                'python3',
+                '-u',
+                code_file.name,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE)
         elif self.cmd['lang'] == 'go':
             self.proc = await asyncio.create_subprocess_exec(
-                'go', 'run', code_file.name,
+                'go',
+                'run',
+                code_file.name,
                 env=dict(GODEBUG='cgocheck=2', **os.environ),
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE)
         elif self.cmd['lang'] == 'cc':
             bin_file = tempfile.NamedTemporaryFile(delete=False)
             self.proc = await asyncio.create_subprocess_exec(
-                'g++', '-std=c++17', '-o', bin_file.name, code_file.name, '-lalephzero',
+                'g++',
+                '-std=c++17',
+                '-o',
+                bin_file.name,
+                code_file.name,
+                '-lalephzero',
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE)
             build_result = await self.proc.wait()
@@ -106,7 +129,7 @@ class CodeRunner:
         if self.proc:
             try:
                 self.proc.kill()
-            except:
+            except Exception:
                 pass
 
     async def _stream(self, stream, name):
@@ -120,27 +143,35 @@ class CodeRunner:
             else:
                 break
 
+
 async def run_code_handshake(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
-    ns = Namespace()
+    class State:
+        runner = None
+
     async for msg in ws:
         if msg.type == WSMsgType.TEXT:
             if msg.data == 'close':
-                await ns.runner.kill()
+                await State.runner.kill()
             else:
-                ns.runner = CodeRunner(json.loads(msg.data), ws)
-                asyncio.ensure_future(ns.runner.run())
+                State.runner = CodeRunner(json.loads(msg.data), ws)
+                asyncio.ensure_future(State.runner.run())
         elif msg.type == WSMsgType.ERROR:
-            if ns.runner:
-                await ns.runner.kill()
+            if State.runner:
+                await State.runner.kill()
             break
-    if ns.runner:
-        await ns.runner.kill()
+    if State.runner:
+        await State.runner.kill()
+
+
+asyncio.get_event_loop().run_until_complete(AlephZeroLibraryBuilder.rebuild())
 
 app = web.Application()
-app.add_routes([web.get('/', root_handler),
-                web.static('/examples', '/examples'),
-                web.get('/api/run', run_code_handshake)])
+app.add_routes([
+    web.get('/', root_handler),
+    web.static('/examples', '/examples'),
+    web.get('/api/run', run_code_handshake)
+])
 web.run_app(app, port=12385)

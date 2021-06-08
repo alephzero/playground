@@ -14,17 +14,7 @@ func check(err error) {
 }
 
 func main() {
-	tm := a0.TopicManager{
-		Container: "uuu",
-		PrpcClientAliases: map[string]a0.TopicAliasTarget{
-			"fff": {
-				Container: "vvv",
-				Topic: "eee",
-			},
-		},
-	}
-
-	topic, err := tm.OpenPrpcClientTopic("fff")
+	topic, err := a0.FileOpen("alephzero/example.prpc.a0", nil)
 	check(err)
 	defer topic.Close()
 

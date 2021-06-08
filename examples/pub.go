@@ -14,11 +14,7 @@ func check(err error) {
 }
 
 func main() {
-	tm := a0.TopicManager{
-		Container: "zzz",
-	}
-
-	topic, err := tm.OpenPublisherTopic("aaa")
+	topic, err := a0.FileOpen("alephzero/example.pubsub.a0", nil)
 	check(err)
 	defer topic.Close()
 

@@ -14,17 +14,7 @@ func check(err error) {
 }
 
 func main() {
-	tm := a0.TopicManager{
-		Container: "www",
-		RpcClientAliases: map[string]a0.TopicAliasTarget{
-			"ddd": {
-				Container: "xxx",
-				Topic: "ccc",
-			},
-		},
-	}
-
-	topic, err := tm.OpenRpcClientTopic("ddd")
+	topic, err := a0.FileOpen("alephzero/example.rpc.a0", nil)
 	check(err)
 	defer topic.Close()
 

@@ -22,7 +22,7 @@ do
       shift 2
       ;;
     --ipc)
-      IPC="--ipc=$2"
+      IPC="--ipc=$2 --pid=$2"
       shift 2
       ;;
     --)

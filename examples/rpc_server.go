@@ -14,11 +14,7 @@ func check(err error) {
 }
 
 func main() {
-	tm := a0.TopicManager{
-		Container: "xxx",
-	}
-
-	topic, err := tm.OpenRpcServerTopic("ccc")
+	topic, err := a0.FileOpen("alephzero/example.rpc.a0", nil)
 	check(err)
 	defer topic.Close()
 
