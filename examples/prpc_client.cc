@@ -4,20 +4,8 @@
 int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
 
-  a0::InitGlobalTopicManager({
-      .container = "uuu",
-      .subscriber_aliases = {},
-      .rpc_client_aliases = {},
-      .prpc_client_aliases = {
-        {"fff", {
-          .container = "vvv",
-          .topic = "eee",
-        }}
-      },
-  });
-
   std::cout << "Waiting 1s for responses" << std::endl;
-  a0::PrpcClient client("fff");
+  a0::PrpcClient client(a0::File("alephzero/example.prpc.a0"));
   client.connect("client request", [](a0::PacketView reply_view, bool done) {
     std::cout << "Recieved reply: " << reply_view.payload() << std::endl;
     if (done) {

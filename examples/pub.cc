@@ -4,14 +4,7 @@
 int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
 
-  a0::InitGlobalTopicManager({
-      .container = "zzz",
-      .subscriber_aliases = {},
-      .rpc_client_aliases = {},
-      .prpc_client_aliases = {},
-  });
-
-  a0::Publisher p("aaa");
+  a0::Publisher p(a0::File("alephzero/example.pubsub.a0"));
 
   for (int i = 0; i < 10; i++) {
     std::string payload = "here (ts=" + std::to_string(i) + ")";
