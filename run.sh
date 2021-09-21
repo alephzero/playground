@@ -6,7 +6,7 @@ docker build -t alephzero_playground .
 opts="$(getopt -o n:p: -l name:,port:,ipc: --name "$0" -- "$@")"
 eval set -- "$opts"
 
-NAME=""
+NAME="--name a0play"
 PORT=12385
 IPC="--ipc=host"
 
