@@ -4,7 +4,7 @@
 int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
 
-  a0::Publisher p(a0::File("alephzero/example.pubsub.a0"));
+  a0::Publisher p("topic");
 
   for (int i = 0; i < 10; i++) {
     std::string payload = "here (ts=" + std::to_string(i) + ")";

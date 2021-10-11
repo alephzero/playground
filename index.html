@@ -39,13 +39,8 @@
 							Example
 						</a>
 						<div class="navbar-dropdown">
-							<div class="navbar-item"><b>{{lang_display["cc"]}}</b></div>
-							<a class="navbar-item" v-for="ex in examples_cc" @click="select_example(ex)">
-								{{ex.display}}
-							</a>
-							<hr class="navbar-divider">
-							<div class="navbar-item"><b>{{lang_display["go"]}}</b></div>
-							<a class="navbar-item" v-for="ex in examples_go" @click="select_example(ex)">
+							<div class="navbar-item"><b>{{lang_display["cpp"]}}</b></div>
+							<a class="navbar-item" v-for="ex in examples_cpp" @click="select_example(ex)">
 								{{ex.display}}
 							</a>
 							<hr class="navbar-divider">
@@ -103,58 +98,34 @@
 			el: '#app',
 			components: window.splitpanes,
 			data: {
-				lang_opts: ['cc', 'go', 'py'],
-				lang_display: { cc: 'C++', go: 'Go', py: 'Python' },
+				lang_opts: ['cpp', 'py'],
+				lang_display: { cpp: 'C++', py: 'Python' },
 				selected_lang: undefined,
 				examples: [
 					{
 						display: 'Publisher',
-						lang: 'cc',
-						path: '/examples/pub.cc',
+						lang: 'cpp',
+						path: '/examples/pub.cpp',
 					}, {
 						display: 'Subscriber',
-						lang: 'cc',
-						path: '/examples/sub.cc',
+						lang: 'cpp',
+						path: '/examples/sub.cpp',
 					}, {
 						display: 'RPC Server',
-						lang: 'cc',
-						path: '/examples/rpc_server.cc',
+						lang: 'cpp',
+						path: '/examples/rpc_server.cpp',
 					}, {
 						display: 'RPC Client',
-						lang: 'cc',
-						path: '/examples/rpc_client.cc',
+						lang: 'cpp',
+						path: '/examples/rpc_client.cpp',
 					}, {
 						display: 'PRPC Server',
-						lang: 'cc',
-						path: '/examples/prpc_server.cc',
+						lang: 'cpp',
+						path: '/examples/prpc_server.cpp',
 					}, {
 						display: 'PRPC Client',
-						lang: 'cc',
-						path: '/examples/prpc_client.cc',
-					}, {
-						display: 'Publisher',
-						lang: 'go',
-						path: '/examples/pub.go',
-					}, {
-						display: 'Subscriber',
-						lang: 'go',
-						path: '/examples/sub.go',
-					}, {
-						display: 'RPC Server',
-						lang: 'go',
-						path: '/examples/rpc_server.go',
-					}, {
-						display: 'RPC Client',
-						lang: 'go',
-						path: '/examples/rpc_client.go',
-					}, {
-						display: 'PRPC Server',
-						lang: 'go',
-						path: '/examples/prpc_server.go',
-					}, {
-						display: 'PRPC Client',
-						lang: 'go',
-						path: '/examples/prpc_client.go',
+						lang: 'cpp',
+						path: '/examples/prpc_client.cpp',
 					}, {
 						display: 'Publisher',
 						lang: 'py',
@@ -204,11 +175,8 @@
 			},
 
 			computed: {
-				examples_cc() {
-					return this.examples.filter(ex => ex.lang == 'cc')
-				},
-				examples_go() {
-					return this.examples.filter(ex => ex.lang == 'go')
+				examples_cpp() {
+					return this.examples.filter(ex => ex.lang == 'cpp')
 				},
 				examples_py() {
 					return this.examples.filter(ex => ex.lang == 'py')
@@ -328,8 +296,7 @@
 					vm.selected_lang = lang
 					if (vm.editor) {
 						vm.editor.session.setMode({
-							cc: 'ace/mode/c_cpp',
-							go: 'ace/mode/golang',
+							cpp: 'ace/mode/c_cpp',
 							py: 'ace/mode/python',
 						}[lang])
 					}

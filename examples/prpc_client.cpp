@@ -5,9 +5,9 @@ int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
 
   std::cout << "Waiting 1s for responses" << std::endl;
-  a0::PrpcClient client(a0::File("alephzero/example.prpc.a0"));
-  client.connect("client request", [](a0::PacketView reply_view, bool done) {
-    std::cout << "Recieved reply: " << reply_view.payload() << std::endl;
+  a0::PrpcClient client("topic");
+  client.connect("client request", [](a0::Packet reply, bool done) {
+    std::cout << "Recieved reply: " << reply.payload() << std::endl;
     if (done) {
       std::cout << "Completed!" << std::endl;
     }
