@@ -7,13 +7,13 @@ RUN mkdir -p /alephzero
 
 # Install C-API
 RUN cd /alephzero &&                                        \
-    git clone -b dev --recurse-submodules https://github.com/alephzero/alephzero.git && \
+    git clone --recurse-submodules https://github.com/alephzero/alephzero.git && \
     cd /alephzero/alephzero &&                              \
     make install -j A0_EXT_NLOHMANN=1 A0_EXT_YYJSON=1
 
 # Install Python-API
 RUN cd /alephzero &&                                         \
-    git clone -b dev --recurse-submodules https://github.com/alephzero/py.git &&         \
+    git clone --recurse-submodules https://github.com/alephzero/py.git &&         \
     cd /alephzero/py &&                                      \
     python3 -m pip install .
 
