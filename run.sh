@@ -1,7 +1,7 @@
 #!/bin/bash
 cd "$(dirname "$0")"
 
-docker build -t alephzero_playground .
+docker build -t alephzero/playground .
 
 opts="$(getopt -o n:p: -l name:,port:,ipc: --name "$0" -- "$@")"
 eval set -- "$opts"
@@ -45,4 +45,4 @@ docker run                         \
   -v ${PWD}/main.py:/main.py       \
   -v ${PWD}/index.html:/index.html \
   -v ${PWD}/examples:/examples     \
-  alephzero_playground
+  alephzero/playground
