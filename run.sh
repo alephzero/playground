@@ -36,13 +36,14 @@ do
   esac
 done
 
-docker run                         \
-  --rm                             \
-  -it                              \
-  $NAME                            \
-  -p $PORT:12385                   \
-  $IPC                             \
-  -v ${PWD}/main.py:/main.py       \
-  -v ${PWD}/index.html:/index.html \
-  -v ${PWD}/examples:/examples     \
+docker run                                \
+  --rm                                    \
+  -it                                     \
+  $NAME                                   \
+  -p $PORT:12385                          \
+  $IPC                                    \
+  -v ${PWD}/main.py:/main.py              \
+  -v ${PWD}/index.html:/index.html        \
+  -v ${PWD}/examples.json:/examples.json  \
+  -v ${PWD}/examples:/examples            \
   alephzero/playground

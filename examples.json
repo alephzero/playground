@@ -1,0 +1,51 @@
+[
+    {
+        "name": "Publisher",
+        "path": "examples/pub.cpp"
+    }, {
+        "name": "Subscriber",
+        "path": "examples/sub.cpp"
+    }, {
+        "name": "Subscriber (sync)",
+        "path": "examples/sub_sync.cpp"
+    }, {
+        "name": "RPC Server",
+        "path": "examples/rpc_server.cpp"
+    }, {
+        "name": "RPC Client",
+        "path": "examples/rpc_client.cpp"
+    }, {
+        "name": "PRPC Server",
+        "path": "examples/prpc_server.cpp"
+    }, {
+        "name": "PRPC Client",
+        "path": "examples/prpc_client.cpp"
+    }, {
+        "name": "Publisher",
+        "path": "examples/pub.py"
+    }, {
+        "name": "Subscriber",
+        "path": "examples/sub.py"
+    }, {
+        "name": "Subscriber (sync)",
+        "path": "examples/sub_sync.py"
+    }, {
+        "name": "RPC Server",
+        "path": "examples/rpc_server.py"
+    }, {
+        "name": "RPC Client",
+        "path": "examples/rpc_client.py"
+    }, {
+        "name": "PRPC Server",
+        "path": "examples/prpc_server.py"
+    }, {
+        "name": "PRPC Client",
+        "path": "examples/prpc_client.py"
+    }, {
+        "name": "Subscriber (asyncio)",
+        "path": "examples/sub.aio.py"
+    }, {
+        "name": "RPC Client (asyncio)",
+        "path": "examples/rpc_client.aio.py"
+    }
+]

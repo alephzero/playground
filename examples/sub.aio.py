@@ -3,8 +3,8 @@ import asyncio
 
 
 async def main():
-    async for pkt in a0.aio_sub("topic", a0.INIT_AWAIT_NEW, a0.ITER_NEWEST):
-        print(f'Got: {pkt.payload.decode("utf-8")}')
+    async for pkt in a0.aio_sub("topic"):
+        print(pkt.payload)
 
 
 print("Listening for 60 sec")

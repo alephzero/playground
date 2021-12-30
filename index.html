@@ -41,12 +41,12 @@
 						<div class="navbar-dropdown">
 							<div class="navbar-item"><b>{{lang_display["cpp"]}}</b></div>
 							<a class="navbar-item" v-for="ex in examples_cpp" @click="select_example(ex)">
-								{{ex.display}}
+								{{ex.name}}
 							</a>
 							<hr class="navbar-divider">
 							<div class="navbar-item"><b>{{lang_display["py"]}}</b></div>
 							<a class="navbar-item" v-for="ex in examples_py" @click="select_example(ex)">
-								{{ex.display}}
+								{{ex.name}}
 							</a>
 						</div>
 					</div>
@@ -101,65 +101,7 @@
 				lang_opts: ['cpp', 'py'],
 				lang_display: { cpp: 'C++', py: 'Python' },
 				selected_lang: undefined,
-				examples: [
-					{
-						display: 'Publisher',
-						lang: 'cpp',
-						path: '/examples/pub.cpp',
-					}, {
-						display: 'Subscriber',
-						lang: 'cpp',
-						path: '/examples/sub.cpp',
-					}, {
-						display: 'RPC Server',
-						lang: 'cpp',
-						path: '/examples/rpc_server.cpp',
-					}, {
-						display: 'RPC Client',
-						lang: 'cpp',
-						path: '/examples/rpc_client.cpp',
-					}, {
-						display: 'PRPC Server',
-						lang: 'cpp',
-						path: '/examples/prpc_server.cpp',
-					}, {
-						display: 'PRPC Client',
-						lang: 'cpp',
-						path: '/examples/prpc_client.cpp',
-					}, {
-						display: 'Publisher',
-						lang: 'py',
-						path: '/examples/pub.py',
-					}, {
-						display: 'Subscriber',
-						lang: 'py',
-						path: '/examples/sub.py',
-					}, {
-						display: 'RPC Server',
-						lang: 'py',
-						path: '/examples/rpc_server.py',
-					}, {
-						display: 'RPC Client',
-						lang: 'py',
-						path: '/examples/rpc_client.py',
-					}, {
-						display: 'PRPC Server',
-						lang: 'py',
-						path: '/examples/prpc_server.py',
-					}, {
-						display: 'PRPC Client',
-						lang: 'py',
-						path: '/examples/prpc_client.py',
-					}, {
-						display: 'Subscriber (asyncio)',
-						lang: 'py',
-						path: '/examples/sub.aio.py',
-					}, {
-						display: 'RPC Client (asyncio)',
-						lang: 'py',
-						path: '/examples/rpc_client.aio.py',
-					},
-				],
+				examples: [],
 				editor: undefined,
 				output_stdout: '',
 				output_stderr: '',
@@ -171,15 +113,18 @@
 				const vm = this
 				const ace_script = document.querySelector('#ace')
 				ace_script.onload = vm.setup_code_panel
+				vm.load_examples()
 				vm.detect_snippets()
 			},
 
 			computed: {
 				examples_cpp() {
-					return this.examples.filter(ex => ex.lang == 'cpp')
+					const vm = this
+					return vm.examples.filter(ex => vm.example_lang(ex) == 'cpp')
 				},
 				examples_py() {
-					return this.examples.filter(ex => ex.lang == 'py')
+					const vm = this
+					return vm.examples.filter(ex => vm.example_lang(ex) == 'py')
 				},
 			},
 			methods: {
@@ -207,11 +152,18 @@
 					})
 				},
 
+				load_examples() {
+					const vm = this
+					fetch('/examples.json')
+						.then(r => r.json())
+						.then(data => { vm.examples = data })
+				},
+
 				detect_snippets() {
 					const vm = this
 					vm.snippets = Object.keys(localStorage)
-						.filter(name => { return name.startsWith('a0_playground__') })
-						.map(name => { return name.substr('a0_playground__'.length) })
+						.filter(name => { return name.startsWith('alephzero/snippet/') })
+						.map(name => { return name.substr('alephzero/snippet/'.length) })
 						.sort()
 				},
 
@@ -219,7 +171,7 @@
 					const vm = this
 
 					// Get snippet name.
-					let snippet_name = prompt("Enter snippet name:")
+					let snippet_name = prompt('Enter snippet name:')
 
 					// Check if the user canceled.
 					if (snippet_name == null) {
@@ -235,7 +187,7 @@
 
 					// TODO(lshamis): Verify there is no conflict with an existing snippet.
 
-					localStorage.setItem(`a0_playground__${snippet_name}`, JSON.stringify({
+					localStorage.setItem(`alephzero/snippet/${snippet_name}`, JSON.stringify({
 						lang: vm.selected_lang,
 						code: vm.editor.getValue()
 					}))
@@ -252,14 +204,14 @@
 					vm.output_stdout = ''
 					vm.output_stderr = ''
 
-					const snippet = JSON.parse(localStorage.getItem(`a0_playground__${snippet_name}`))
+					const snippet = JSON.parse(localStorage.getItem(`alephzero/snippet/${snippet_name}`))
 					vm.select_lang(snippet.lang)
 					vm.editor.setValue(snippet.code, 1)
 				},
 
 				delete_snippet(snippet_name) {
 					const vm = this
-					localStorage.removeItem(`a0_playground__${snippet_name}`)
+					localStorage.removeItem(`alephzero/snippet/${snippet_name}`)
 
 					vm.detect_snippets()
 				},
@@ -291,6 +243,10 @@
 					}
 				},
 
+				example_lang(ex) {
+					return ex.path.split('.').pop()
+				},
+
 				select_lang(lang) {
 					const vm = this
 					vm.selected_lang = lang
@@ -302,7 +258,7 @@
 					}
 				},
 
-				select_example(example) {
+				select_example(ex) {
 					const vm = this
 
 					if (vm.ws) {
@@ -311,10 +267,10 @@
 					vm.output_stdout = ''
 					vm.output_stderr = ''
 
-					vm.select_lang(example.lang)
-					fetch(example.path)
-						.then((r) => { return r.text() })
-						.then((code) => { vm.editor.setValue(code, 1) })
+					vm.select_lang(vm.example_lang(ex))
+					fetch(ex.path)
+						.then(r => { return r.text() })
+						.then(code => { vm.editor.setValue(code, 1) })
 				}
 			}
 		})

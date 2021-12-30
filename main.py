@@ -21,8 +21,11 @@ def hash_directory(directory):
     return hash_builder.hexdigest()
 
 
-async def root_handler(request):
-    return web.FileResponse("/index.html")
+def serve_file(path):
+    async def fn(_):
+        return web.FileResponse(path)
+
+    return fn
 
 
 class AlephZeroLibraryBuilder:
@@ -178,7 +181,8 @@ asyncio.get_event_loop().run_until_complete(AlephZeroLibraryBuilder.rebuild())
 app = web.Application()
 app.add_routes(
     [
-        web.get("/", root_handler),
+        web.get("/", serve_file("/index.html")),
+        web.get("/examples.json", serve_file("/examples.json")),
         web.static("/examples", "/examples"),
         web.get("/api/run", run_code_handshake),
     ]
